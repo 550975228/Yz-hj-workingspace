@@ -9,12 +9,14 @@ var centerX = 0.0;
 var centerY = 1.0;
 var centerZ = 0.0;
 var radius = 10.0;
+//获取光线:平行光
+var lightDirection = getLight();
 
 function main() {
     // 获取 <canvas> 元素
     var canvas = document.getElementById('canvas');
-    canvas.width=window.innerWidth;
-    canvas.height=window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     initEventHandlers(canvas);
     // 获取WebGL渲染上下文
     var gl = getWebGLContext(canvas);
@@ -73,7 +75,7 @@ function GetProgramLocation(gl, drawProgram, frameProgram) {
         console.log('Failed to get the storage location of a_Position, a_Color, a_Normal, u_MvpMatrix, u_MvpMatrixFromLight');
         //return;
     }
-    drawProgram.u_Sampler = gl.getUniformLocation(drawProgram,"u_Sampler");
+    drawProgram.u_Sampler = gl.getUniformLocation(drawProgram, "u_Sampler");
     drawProgram.u_AmbientLight = gl.getUniformLocation(drawProgram, 'u_AmbientLight');
     drawProgram.u_DiffuseLight = gl.getUniformLocation(drawProgram, 'u_DiffuseLight');
     drawProgram.u_LightDirection = gl.getUniformLocation(drawProgram, 'u_LightDirection');
@@ -97,36 +99,12 @@ function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
     // 设置顶点位置
     var plane = initVertexBuffersForPlane(gl);
     var cube = initVertexBuffersForCube(gl);
-    if (!cube||!plane) {
+    if (!cube || !plane) {
         console.log('Failed to set the positions of the vertices');
         return;
     }
 
-    //获取光线:平行光
-    var lightDirection = getLight();
-
-    //预先给着色器传递一些不变的量
-    {
-        //使用帧缓冲区着色器
-        gl.useProgram(frameProgram);
-        //设置在帧缓存中绘制的MVP矩阵
-        var MvpMatrixFromLight = setFrameMVPMatrix(gl, lightDirection, frameProgram);
-
-        //使用颜色缓冲区着色器
-        gl.useProgram(drawProgram);
-        //设置在颜色缓冲区中绘制时光线的MVP矩阵
-        gl.uniformMatrix4fv(drawProgram.u_MvpMatrixFromLight, false, MvpMatrixFromLight.elements);
-        //设置光线的强度和方向
-        gl.uniform3f(drawProgram.u_DiffuseLight, 1.0, 1.0, 1.0);    //设置漫反射光
-        gl.uniform3fv(drawProgram.u_LightDirection, lightDirection.elements);   // 设置光线方向(世界坐标系下的)
-        gl.uniform3f(drawProgram.u_AmbientLight, 0.4, 0.4, 0.4);    //设置环境光
-        //将绘制在帧缓冲区的纹理传递给颜色缓冲区着色器的0号纹理单元
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
-        gl.uniform1i(drawProgram.u_Sampler, 0);
-
-        gl.useProgram(null);
-    }
+    unchangeconst(gl, canvas, fbo, frameProgram, drawProgram);
 
     //开始绘制
     var tick = function () {
@@ -142,7 +120,7 @@ function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
         //分配缓冲区对象并开启连接
         initAttributeVariable(gl, frameProgram.a_Position, cube.vertexBuffer); // 顶点坐标
         initAttributeVariable(gl, frameProgram.a_Color, cube.colorBuffer); // 颜色
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,cube.indexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.indexBuffer);
         gl.drawElements(gl.TRIANGLES, cube.numIndices, cube.indexBuffer.type, 0);
 
 
@@ -183,6 +161,30 @@ function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
     tick();
 }
 
+function unchangeconst(gl, canvas, fbo, frameProgram, drawProgram) {
+    //预先给着色器传递一些不变的量
+    {
+        //使用帧缓冲区着色器
+        gl.useProgram(frameProgram);
+        //设置在帧缓存中绘制的MVP矩阵
+        var MvpMatrixFromLight = setFrameMVPMatrix(gl, lightDirection, frameProgram);
+
+        //使用颜色缓冲区着色器
+        gl.useProgram(drawProgram);
+        //设置在颜色缓冲区中绘制时光线的MVP矩阵
+        gl.uniformMatrix4fv(drawProgram.u_MvpMatrixFromLight, false, MvpMatrixFromLight.elements);
+        //设置光线的强度和方向
+        gl.uniform3f(drawProgram.u_DiffuseLight, 1.0, 1.0, 1.0);    //设置漫反射光
+        gl.uniform3fv(drawProgram.u_LightDirection, lightDirection.elements);   // 设置光线方向(世界坐标系下的)
+        gl.uniform3f(drawProgram.u_AmbientLight, 0.4, 0.4, 0.4);    //设置环境光
+        //将绘制在帧缓冲区的纹理传递给颜色缓冲区着色器的0号纹理单元
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+        gl.uniform1i(drawProgram.u_Sampler, 0);
+
+        gl.useProgram(null);
+    }
+}
 //设置帧MVP矩阵
 function setFrameMVPMatrix(gl, lightDirection, frameProgram) {
     //模型矩阵
@@ -192,9 +194,9 @@ function setFrameMVPMatrix(gl, lightDirection, frameProgram) {
     //视图矩阵
     var viewMatrix = new Matrix4();
     var r = radius + 10;
-    var eyex=lightDirection.elements[0]*r;
-    var eyey=-lightDirection.elements[1]*r;
-    var eyez=lightDirection.elements[2]*r;
+    var eyex = lightDirection.elements[0] * r;
+    var eyey = -lightDirection.elements[1] * r;
+    var eyez = lightDirection.elements[2] * r;
     viewMatrix.lookAt(eyex, eyey, eyez, 0, 0, 0, 0, 1, 0);
     //viewMatrix.lookAt(0, 0, r, 0, 0, 0, 0, 1, 0);
 
@@ -215,6 +217,7 @@ function setFrameMVPMatrix(gl, lightDirection, frameProgram) {
 
     return mvpMatrix;
 }
+
 //设置正常MVP矩阵
 function setMVPMatrix(gl, canvas, lightDirection, drawProgram) {
     //模型矩阵
@@ -241,7 +244,6 @@ function setMVPMatrix(gl, canvas, lightDirection, drawProgram) {
     //将MVP矩阵传输到着色器的uniform变量u_MvpMatrix
     gl.uniformMatrix4fv(drawProgram.u_MvpMatrix, false, mvpMatrix.elements);
 }
-
 
 
 //获取光线 模拟一天的日照
@@ -401,12 +403,12 @@ function initVertexBuffersForCube(gl) {
     //  |/      |/
     //  v2------v3
     var vertices = new Float32Array([   // 顶点坐标
-        0.5, 0.5, 0.5,      -0.5, 0.5, 0.5,     -0.5, -0.5, 0.5,    0.5, -0.5, 0.5,  // v0-v1-v2-v3 front
-        0.5, 0.5, 0.5,      0.5, -0.5, 0.5,     0.5, -0.5, -0.5,    0.5, 0.5, -0.5,  // v0-v3-v4-v5 right
-        0.5, 0.5, 0.5,      0.5, 0.5, -0.5,     -0.5, 0.5, -0.5,    -0.5, 0.5, 0.5,  // v0-v5-v6-v1 up
-        -0.5, 0.5, 0.5,     -0.5, 0.5, -0.5,    -0.5, -0.5, -0.5,   -0.5, -0.5, 0.5,  // v1-v6-v7-v2 left
-        -0.5, -0.5, -0.5,   0.5, -0.5, -0.5,    0.5, -0.5, 0.5,     -0.5, -0.5, 0.5,  // v7-v4-v3-v2 down
-        0.5, -0.5, -0.5,    -0.5, -0.5, -0.5,   -0.5, 0.5, -0.5,    0.5, 0.5, -0.5   // v4-v7-v6-v5 back
+        0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5,  // v0-v1-v2-v3 front
+        0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5,  // v0-v3-v4-v5 right
+        0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5,  // v0-v5-v6-v1 up
+        -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5,  // v1-v6-v7-v2 left
+        -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5,  // v7-v4-v3-v2 down
+        0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5   // v4-v7-v6-v5 back
     ]);
 
     var colors = new Float32Array([     // 颜色
