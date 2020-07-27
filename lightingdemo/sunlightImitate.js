@@ -21,7 +21,7 @@ function main() {
     // 获取WebGL渲染上下文
     var gl = getWebGLContext(canvas);
     if (!gl) {
-        console.log('Failed to get the rendering context for WebGL');
+        console.log('获取上下文失败');
         return;
     }
 
@@ -33,7 +33,7 @@ function main() {
     var drawProgram = createProgram(gl, vertexShader, fragmentShader);
     var frameProgram = createProgram(gl, shadowVertexShader, shadowFragmentShader);
     if (!drawProgram || !frameProgram) {
-        console.log('Failed to intialize shaders.');
+        console.log('初始化着色器失败.');
         return;
     }
 
@@ -43,7 +43,7 @@ function main() {
     // 初始化帧缓冲区对象 (FBO)
     var fbo = initFramebufferObject(gl);
     if (!fbo) {
-        console.log('Failed to intialize the framebuffer object (FBO)');
+        console.log('获取帧缓冲区失败');
         return;
     }
 
@@ -64,32 +64,34 @@ function main() {
 
 //从着色器中获取地址，保存到对应的变量中
 function GetProgramLocation(gl, drawProgram, frameProgram) {
-    // Get the storage location of attribute variables and uniform variables
+
     drawProgram.a_Position = gl.getAttribLocation(drawProgram, 'a_Position');
     drawProgram.a_Color = gl.getAttribLocation(drawProgram, 'a_Color');
     drawProgram.a_Normal = gl.getAttribLocation(drawProgram, 'a_Normal');
-    drawProgram.u_MvpMatrix = gl.getUniformLocation(drawProgram, 'u_MvpMatrix');
-    drawProgram.u_MvpMatrixFromLight = gl.getUniformLocation(drawProgram, 'u_MvpMatrixFromLight');
-    if (drawProgram.a_Position < 0 || drawProgram.a_Color < 0 || drawProgram.a_Normal < 0 || !drawProgram.u_MvpMatrix
-        || !drawProgram.u_MvpMatrixFromLight) {
-        console.log('Failed to get the storage location of a_Position, a_Color, a_Normal, u_MvpMatrix, u_MvpMatrixFromLight');
+    if (drawProgram.a_Position < 0 || drawProgram.a_Color < 0 || drawProgram.a_Normal < 0 ) {
+        console.log('获取正常着色器attribute变量失败');
         //return;
     }
+
+
+    drawProgram.u_MvpMatrix = gl.getUniformLocation(drawProgram, 'u_MvpMatrix');
+    drawProgram.u_MvpMatrixFromLight = gl.getUniformLocation(drawProgram, 'u_MvpMatrixFromLight');
     drawProgram.u_Sampler = gl.getUniformLocation(drawProgram, "u_Sampler");
     drawProgram.u_AmbientLight = gl.getUniformLocation(drawProgram, 'u_AmbientLight');
     drawProgram.u_DiffuseLight = gl.getUniformLocation(drawProgram, 'u_DiffuseLight');
     drawProgram.u_LightDirection = gl.getUniformLocation(drawProgram, 'u_LightDirection');
-    if (!drawProgram.u_DiffuseLight || !drawProgram.u_LightDirection || !drawProgram.u_AmbientLight) {
-        console.log('Failed to get the storage location of u_AmbientLight, u_DiffuseLight, u_LightDirection');
+    if (!drawProgram.u_MvpMatrix || !drawProgram.u_MvpMatrixFromLight || !drawProgram.u_DiffuseLight || !drawProgram.u_LightDirection || !drawProgram.u_AmbientLight) {
+        console.log('获取正常着色器uniform变量失败');
         //return;
     }
+
 
     frameProgram.a_Position = gl.getAttribLocation(frameProgram, 'a_Position');
     frameProgram.a_Color = gl.getAttribLocation(frameProgram, 'a_Color');
     frameProgram.u_MvpMatrix = gl.getUniformLocation(frameProgram, 'u_MvpMatrix');
 
     if (frameProgram.a_Position < 0 || frameProgram.a_TexCoord < 0 || !frameProgram.u_MvpMatrix) {
-        console.log('Failed to get the storage location of a_Position, a_Color, u_MvpMatrix');
+        console.log('获取帧着色器变量失败');
         //return;
     }
 }
@@ -100,7 +102,7 @@ function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
     var plane = initVertexBuffersForPlane(gl);
     var cube = initVertexBuffersForCube(gl);
     if (!cube || !plane) {
-        console.log('Failed to set the positions of the vertices');
+        console.log('获取顶点坐标失败');
         return;
     }
 
@@ -113,8 +115,8 @@ function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); //将绘制目标切换为帧缓冲区对象FBO
         gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT); // 为FBO设置一个视口
 
-        gl.clearColor(0.8, 0.8, 0.8, 0.85); // Set clear color (the color is slightly changed)
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear FBO
+        gl.clearColor(0.8, 0.8, 0.8, 0.85); // 设置背景色
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // 清空fbo
         gl.useProgram(frameProgram); //准备生成纹理贴图
 
         //分配缓冲区对象并开启连接
