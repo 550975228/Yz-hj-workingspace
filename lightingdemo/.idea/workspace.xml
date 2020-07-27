@@ -54,7 +54,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dart.analysis.tool.window.visible" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/libs" />
     <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
@@ -74,7 +74,7 @@
       <updated>1595574179684</updated>
       <workItem from="1595574180883" duration="1144000" />
       <workItem from="1595575424525" duration="4645000" />
-      <workItem from="1595811212009" duration="12612000" />
+      <workItem from="1595811212009" duration="15142000" />
     </task>
     <servers />
   </component>
