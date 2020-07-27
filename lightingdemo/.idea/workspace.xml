@@ -74,7 +74,7 @@
       <updated>1595574179684</updated>
       <workItem from="1595574180883" duration="1144000" />
       <workItem from="1595575424525" duration="4645000" />
-      <workItem from="1595811212009" duration="7214000" />
+      <workItem from="1595811212009" duration="12612000" />
     </task>
     <servers />
   </component>
@@ -106,9 +106,17 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1595833139543">
+      <screen x="0" y="0" width="1920" height="1046" />
+    </state>
+    <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1046@0.0.1920.1046" timestamp="1595833139543" />
     <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1595579245575">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="552" y="256" key="Vcs.Push.Dialog.v2/0.0.1920.1046@0.0.1920.1046" timestamp="1595579245575" />
+    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup" timestamp="1595837918999">
+      <screen x="0" y="0" width="1920" height="1046" />
+    </state>
+    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup/0.0.1920.1046@0.0.1920.1046" timestamp="1595837918999" />
   </component>
 </project>

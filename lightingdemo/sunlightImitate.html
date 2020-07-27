@@ -4,14 +4,30 @@
     <meta charset="UTF-8">
     <title>测试用例</title>
     <style>
+        *{box-sizing: border-box}
         body {
-            margin: 0;
-            height: 100%;
-            width: 100%;
-            color: red;
+            font-family: Arial;
+            padding: 10px;
+            background: #f1f1f1;
         }
-
+        .leftcolumn{
+            float: left;
+            width: 75%;
+        }
+        .rightcolum{
+            float: left;
+            width: 25%;
+            background-color: #f1f1f1;
+            padding-left: 20px;
+        }
+        .card {
+            background-color: gainsboro;
+            padding: 20px;
+            margin-top: 20px;
+        }
         canvas {
+            width: 100%;
+            height: 100%;
             display: block;
         }
     </style>
@@ -92,8 +108,17 @@
     </script>
 </head>
 <body onload="main()">
-
-<canvas id="canvas"></canvas>
+<div class="leftcolumn">
+    <div class="card">
+        <h2 style="text-align: center">太阳光光照模拟</h2>
+        <canvas id="canvas"></canvas>
+    </div>
+</div>
+<div class="rightcolum">
+    <div class="card">
+        <h2>这里放控制栏</h2>
+    </div>
+</div>
 <script src="libs/webgl_utils"></script>
 <script src="libs/webgl_debug.js"></script>
 <script src="libs/cuon_matrix.js"></script>
