@@ -31,6 +31,7 @@
             display: block;
         }
     </style>
+    <link rel="stylesheet" href="libs/layui/css/layui.css" media="all">
     <script id="shadowVertexShader" type="x-shader/x-vertex">
         //设置阴影顶点着色器
         attribute vec4 a_Position;
@@ -116,9 +117,19 @@
 </div>
 <div class="rightcolum">
     <div class="card">
-        <h2>这里放控制栏</h2>
+        <h2>SunLight Controller</h2>
+        <div>
+
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+                <legend>时间选择：</legend>
+            </fieldset>
+            <div id="timeSlider" class="daytime-slider"></div>
+        </div>
     </div>
 </div>
+<script src="libs/layui/layui.all.js" charset="UTF-8"></script>
+<script src="libs/sunRealHour.js"></script>
+<script src="libs/sunCaculateFunction.js"></script>
 <script src="libs/webgl_utils"></script>
 <script src="libs/webgl_debug.js"></script>
 <script src="libs/cuon_matrix.js"></script>

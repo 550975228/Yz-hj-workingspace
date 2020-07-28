@@ -12,6 +12,8 @@ var radius = 10.0;
 //获取光线:平行光
 var lightDirection = getLight();
 
+
+
 function main() {
     // 获取 <canvas> 元素
     var canvas = document.getElementById('canvas');
@@ -251,8 +253,8 @@ function setMVPMatrix(gl, canvas, lightDirection, drawProgram) {
 //获取光线 模拟一天的日照
 function getLight() {
     // 设置光线方向(世界坐标系下的)
-    var solarAltitude = 30.0;//太阳高度
-    var solarAzimuth = -150.0;//太阳方位角
+    var solarAltitude = 45.0;//太阳高度
+    var solarAzimuth = 315.0;//太阳方位角
     var fAltitude = solarAltitude * Math.PI / 180; //光源高度角
     var fAzimuth = solarAzimuth * Math.PI / 180; //光源方位角
 
@@ -597,3 +599,5 @@ function initEventHandlers(canvas) {
         }
     };
 }
+
+
