@@ -6,7 +6,7 @@ var t;//太阳时角
 var n = 1;//距离年初1月1日的天数 2020/7/28
 const myDate = new Date();//获取系统当前时间
 var shadowDate = myDate.Format("yyyy/MM/dd");
-var shadowTime;
+var shadowTime = 6;
 // shadowTime = parseInt(value.split("点")[0])+parseInt(value.split("点")[1].split("分")[0])/60;
 var realSunHour;//真太阳时
 const listenSlider = () => {
@@ -30,9 +30,9 @@ const listenSlider = () => {
                 realSunHour = computeRealSunHour(shadowDate, shadowTime);
                 t = computeSunHourangle(realSunHour);// 太阳时角
                 sunDeclination = computeSunDeclination(n);// 太阳赤纬
-                let jdSolarAltitude =computeSolarAltitude(dimension,sinSundegree,t);
-                solarAltitude = (180/Math.PI)*jdSolarAltitude; // 转换成角度
-                solarAzimuth =computeSolarAzimuth(dimension,sinSundegree,jdSolarAltitude,realSunHour);
+                let hdSolarAltitude =computeSolarAltitude(dimension,sunDeclination,t);
+                solarAltitude = (180/Math.PI)*hdSolarAltitude; // 转换成角度
+                solarAzimuth =computeSolarAzimuth(dimension,sunDeclination,hdSolarAltitude,realSunHour);
                 console.log(solarAltitude);
                 console.log(solarAzimuth);
             }

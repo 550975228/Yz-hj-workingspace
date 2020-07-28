@@ -9,19 +9,40 @@ var centerX = 0.0;
 var centerY = 1.0;
 var centerZ = 0.0;
 var radius = 10.0;
-//获取光线:平行光
-var lightDirection = getLight();
 
+{
+    // webgl基本参数
+    var canvas, gl, drawProgram, frameProgram, fbo, plane, cube;
+}
+{//太阳光高度角方位角计算所需变量和数据
+    var solarAltitude;//太阳高度
+    var solarAzimuth;//太阳方位角
+    var dimension = 31.265524;//上海杨浦区地理纬度
+    var sunDeclination;//太阳赤纬
+    var t;//太阳时角
+    var n = 1;//距离年初1月1日的天数 2020/7/28
+    const myDate = new Date();//获取系统当前时间
+    var shadowDate = myDate.Format("yyyy/MM/dd");
+    var shadowTime = 6;
+// shadowTime = parseInt(value.split("点")[0])+parseInt(value.split("点")[1].split("分")[0])/60;
+    var realSunHour;//真太阳时
+
+}
+
+//获取光线:平行光
+// var lightDirection = getLight();
+var lightDirection;
 
 
 function main() {
     // 获取 <canvas> 元素
-    var canvas = document.getElementById('canvas');
+    canvas = document.getElementById('canvas');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     initEventHandlers(canvas);
+
     // 获取WebGL渲染上下文
-    var gl = getWebGLContext(canvas);
+    gl = getWebGLContext(canvas);
     if (!gl) {
         console.log('获取上下文失败');
         return;
@@ -32,18 +53,18 @@ function main() {
     var shadowFragmentShader = document.getElementById('shadowFragmentShader').innerHTML;
     var vertexShader = document.getElementById('vertexShader').innerHTML;
     var fragmentShader = document.getElementById('fragmentShader').innerHTML;
-    var drawProgram = createProgram(gl, vertexShader, fragmentShader);
-    var frameProgram = createProgram(gl, shadowVertexShader, shadowFragmentShader);
+    drawProgram = createProgram(gl, vertexShader, fragmentShader);
+    frameProgram = createProgram(gl, shadowVertexShader, shadowFragmentShader);
     if (!drawProgram || !frameProgram) {
         console.log('初始化着色器失败.');
         return;
     }
 
     //从着色器中获取地址，保存到对应的变量中
-    GetProgramLocation(gl, drawProgram, frameProgram);
+    GetProgramLocation();
 
     // 初始化帧缓冲区对象 (FBO)
-    var fbo = initFramebufferObject(gl);
+    fbo = initFramebufferObject(gl);
     if (!fbo) {
         console.log('获取帧缓冲区失败');
         return;
@@ -58,19 +79,18 @@ function main() {
     //清空颜色和深度缓冲区
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    listenSlider();
 
-    //绘制
-    DrawScene(gl, canvas, fbo, frameProgram, drawProgram);
 
 }
 
 //从着色器中获取地址，保存到对应的变量中
-function GetProgramLocation(gl, drawProgram, frameProgram) {
+function GetProgramLocation() {
 
     drawProgram.a_Position = gl.getAttribLocation(drawProgram, 'a_Position');
     drawProgram.a_Color = gl.getAttribLocation(drawProgram, 'a_Color');
     drawProgram.a_Normal = gl.getAttribLocation(drawProgram, 'a_Normal');
-    if (drawProgram.a_Position < 0 || drawProgram.a_Color < 0 || drawProgram.a_Normal < 0 ) {
+    if (drawProgram.a_Position < 0 || drawProgram.a_Color < 0 || drawProgram.a_Normal < 0) {
         console.log('获取正常着色器attribute变量失败');
         //return;
     }
@@ -99,84 +119,32 @@ function GetProgramLocation(gl, drawProgram, frameProgram) {
 }
 
 //绘制
-function DrawScene(gl, canvas, fbo, frameProgram, drawProgram) {
+function DrawScene() {
     // 设置顶点位置
-    var plane = initVertexBuffersForPlane(gl);
-    var cube = initVertexBuffersForCube(gl);
+    plane = initVertexBuffersForPlane(gl);
+    cube = initVertexBuffersForCube(gl);
     if (!cube || !plane) {
         console.log('获取顶点坐标失败');
         return;
     }
-
-    unchangeconst(gl, canvas, fbo, frameProgram, drawProgram);
-
+    gl.useProgram(frameProgram);
+    //设置在帧缓存中绘制的MVP矩阵
+    var MvpMatrixFromLight = setFrameMVPMatrix(gl, lightDirection, frameProgram);
+    //使用颜色缓冲区着色器
+    gl.useProgram(drawProgram);
+    //设置在颜色缓冲区中绘制时光线的MVP矩阵
+    gl.uniformMatrix4fv(drawProgram.u_MvpMatrixFromLight, false, MvpMatrixFromLight.elements);
+    unchangeconst();
     //开始绘制
-    var tick = function () {
-        //帧缓存绘制
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); //将绘制目标切换为帧缓冲区对象FBO
-        gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT); // 为FBO设置一个视口
-
-        gl.clearColor(0.8, 0.8, 0.8, 0.85); // 设置背景色
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // 清空fbo
-        gl.useProgram(frameProgram); //准备生成纹理贴图
-
-        //分配缓冲区对象并开启连接
-        initAttributeVariable(gl, frameProgram.a_Position, cube.vertexBuffer); // 顶点坐标
-        initAttributeVariable(gl, frameProgram.a_Color, cube.colorBuffer); // 颜色
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, cube.numIndices, cube.indexBuffer.type, 0);
-
-
-        initAttributeVariable(gl, frameProgram.a_Position, plane.vertexBuffer); // 顶点坐标
-        initAttributeVariable(gl, frameProgram.a_Color, plane.colorBuffer); // 颜色
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, plane.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, plane.numIndices, plane.indexBuffer.type, 0);
-
-        //颜色缓存绘制
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null); //将绘制目标切换为颜色缓冲区
-        gl.viewport(0, 0, canvas.width, canvas.height); // 设置视口为当前画布的大小
-
-        gl.clearColor(0.8, 0.8, 0.8, 0.85);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear the color buffer
-        gl.useProgram(drawProgram); // 准备进行绘制
-
-        //设置MVP矩阵
-        setMVPMatrix(gl, canvas, lightDirection, drawProgram);
-
-        //分配缓冲区对象并开启连接
-        initAttributeVariable(gl, drawProgram.a_Position, cube.vertexBuffer); // Vertex coordinates
-        initAttributeVariable(gl, drawProgram.a_Color, cube.colorBuffer); // Texture coordinates
-        initAttributeVariable(gl, drawProgram.a_Normal, cube.normalBuffer); // Texture coordinates
-
-        //分配索引并绘制
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, cube.numIndices, cube.indexBuffer.type, 0);
-        //分配缓冲区对象并开启连接
-        initAttributeVariable(gl, drawProgram.a_Position, plane.vertexBuffer); // Vertex coordinates
-        initAttributeVariable(gl, drawProgram.a_Color, plane.colorBuffer); // Texture coordinates
-
-        //分配索引并绘制
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, plane.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, plane.numIndices, plane.indexBuffer.type, 0);
-
-        requestAnimationFrame(tick);
-    };
-    tick();
+    drawEvery();
+    //tick();
 }
 
-function unchangeconst(gl, canvas, fbo, frameProgram, drawProgram) {
+function unchangeconst() {
     //预先给着色器传递一些不变的量
     {
-        //使用帧缓冲区着色器
-        gl.useProgram(frameProgram);
-        //设置在帧缓存中绘制的MVP矩阵
-        var MvpMatrixFromLight = setFrameMVPMatrix(gl, lightDirection, frameProgram);
-
         //使用颜色缓冲区着色器
         gl.useProgram(drawProgram);
-        //设置在颜色缓冲区中绘制时光线的MVP矩阵
-        gl.uniformMatrix4fv(drawProgram.u_MvpMatrixFromLight, false, MvpMatrixFromLight.elements);
         //设置光线的强度和方向
         gl.uniform3f(drawProgram.u_DiffuseLight, 1.0, 1.0, 1.0);    //设置漫反射光
         gl.uniform3fv(drawProgram.u_LightDirection, lightDirection.elements);   // 设置光线方向(世界坐标系下的)
@@ -189,8 +157,9 @@ function unchangeconst(gl, canvas, fbo, frameProgram, drawProgram) {
         gl.useProgram(null);
     }
 }
+
 //设置帧MVP矩阵
-function setFrameMVPMatrix(gl, lightDirection, frameProgram) {
+function setFrameMVPMatrix() {
     //模型矩阵
     var modelMatrix = new Matrix4();
     modelMatrix.translate(-centerX, -centerY, -centerZ);
@@ -223,7 +192,7 @@ function setFrameMVPMatrix(gl, lightDirection, frameProgram) {
 }
 
 //设置正常MVP矩阵
-function setMVPMatrix(gl, canvas, lightDirection, drawProgram) {
+function setMVPMatrix() {
     //模型矩阵
     var modelMatrix = new Matrix4();
     modelMatrix.scale(curScale, curScale, curScale);
@@ -252,17 +221,27 @@ function setMVPMatrix(gl, canvas, lightDirection, drawProgram) {
 
 //获取光线 模拟一天的日照
 function getLight() {
+    var lightDirection;
     // 设置光线方向(世界坐标系下的)
-    var solarAltitude = 45.0;//太阳高度
-    var solarAzimuth = 315.0;//太阳方位角
-    var fAltitude = solarAltitude * Math.PI / 180; //光源高度角
-    var fAzimuth = solarAzimuth * Math.PI / 180; //光源方位角
+    // var solarAltitude = 45.0;//太阳高度
+    // var solarAzimuth = 315.0;//太阳方位角.
+    t = computeSunHourangle(realSunHour);// 太阳时角
+    sunDeclination = computeSunDeclination(n);// 太阳赤纬
+    let hdSolarAltitude = computeSolarAltitude(dimension, sunDeclination, t);
+    solarAltitude = (180 / Math.PI) * hdSolarAltitude; // 转换成角度
+    solarAzimuth = computeSolarAzimuth(dimension, sunDeclination, hdSolarAltitude, realSunHour) * 2;
+    if (solarAltitude > 0) {
+        var fAltitude = solarAltitude * Math.PI / 180; //光源高度角
+        var fAzimuth = solarAzimuth * Math.PI / 180; //光源方位角
 
-    var arrayvectorX = Math.cos(fAltitude) * Math.cos(fAzimuth);
-    var arrayvectorY = Math.cos(fAltitude) * Math.sin(fAzimuth);
-    var arrayvectorZ = Math.sin(fAltitude);
+        var arrayvectorX = Math.cos(fAltitude) * Math.cos(fAzimuth);
+        var arrayvectorY = Math.cos(fAltitude) * Math.sin(fAzimuth);
+        var arrayvectorZ = Math.sin(fAltitude);
 
-    var lightDirection = new Vector3([arrayvectorX, arrayvectorY, arrayvectorZ]);
+        lightDirection = new Vector3([arrayvectorX, arrayvectorY, arrayvectorZ]);
+    } else {
+        lightDirection = new Vector3([0, 0, 0]);
+    }
     lightDirection.normalize(); // Normalize
     return lightDirection;
 }
@@ -546,6 +525,67 @@ function initElementArrayBufferForLaterUse(gl, data, type) {
     return buffer;
 }
 
+/**
+ * tick
+ */
+var tick = function () {
+    drawEvery();
+    requestAnimationFrame(tick);
+}
+/**
+ *  需要循环的绘制部分
+ * */
+var drawEvery = function () {
+    //帧缓存绘制
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); //将绘制目标切换为帧缓冲区对象FBO
+    gl.viewport(0, 0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT); // 为FBO设置一个视口
+
+    gl.clearColor(0.8, 0.8, 0.8, 0.85); // 设置背景色
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // 清空fbo
+    gl.useProgram(frameProgram); //准备生成纹理贴图
+
+    //分配缓冲区对象并开启连接
+    initAttributeVariable(gl, frameProgram.a_Position, cube.vertexBuffer); // 顶点坐标
+    initAttributeVariable(gl, frameProgram.a_Color, cube.colorBuffer); // 颜色
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.indexBuffer);
+    gl.drawElements(gl.TRIANGLES, cube.numIndices, cube.indexBuffer.type, 0);
+
+
+    initAttributeVariable(gl, frameProgram.a_Position, plane.vertexBuffer); // 顶点坐标
+    initAttributeVariable(gl, frameProgram.a_Color, plane.colorBuffer); // 颜色
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, plane.indexBuffer);
+    gl.drawElements(gl.TRIANGLES, plane.numIndices, plane.indexBuffer.type, 0);
+
+    //颜色缓存绘制
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); //将绘制目标切换为颜色缓冲区
+    gl.viewport(0, 0, canvas.width, canvas.height); // 设置视口为当前画布的大小
+
+    gl.clearColor(0.8, 0.8, 0.8, 0.85);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear the color buffer
+    gl.useProgram(drawProgram); // 准备进行绘制
+
+    //设置MVP矩阵
+    setMVPMatrix(gl, canvas, lightDirection, drawProgram);
+
+    //分配缓冲区对象并开启连接
+    initAttributeVariable(gl, drawProgram.a_Position, cube.vertexBuffer); // Vertex coordinates
+    initAttributeVariable(gl, drawProgram.a_Color, cube.colorBuffer); // Texture coordinates
+    initAttributeVariable(gl, drawProgram.a_Normal, cube.normalBuffer); // Texture coordinates
+
+    //分配索引并绘制
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.indexBuffer);
+    gl.drawElements(gl.TRIANGLES, cube.numIndices, cube.indexBuffer.type, 0);
+    //分配缓冲区对象并开启连接
+    initAttributeVariable(gl, drawProgram.a_Position, plane.vertexBuffer); // Vertex coordinates
+    initAttributeVariable(gl, drawProgram.a_Color, plane.colorBuffer); // Texture coordinates
+
+    //分配索引并绘制
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, plane.indexBuffer);
+    gl.drawElements(gl.TRIANGLES, plane.numIndices, plane.indexBuffer.type, 0);
+
+}
+
 
 //注册鼠标事件
 function initEventHandlers(canvas) {
@@ -601,3 +641,32 @@ function initEventHandlers(canvas) {
 }
 
 
+//layui监听slider变化
+const listenSlider = () => {
+
+    var sliderControl;
+    layui.use('slider', function () {
+        var $ = layui.$
+            , slider = layui.slider;
+
+        sliderControl = slider.render({
+            elem: '#timeSlider'
+            , max: 24 * 60
+            , showstep: true
+            , step: 1
+            , setTips: function (value) {
+                return parseInt(value / 60) + '点' + value % 60 + '分';
+            }
+            , change: function (value) {
+                //值改变之后 将会改变的地方
+                shadowTime = parseInt(value.split("点")[0]) + parseInt(value.split("点")[1].split("分")[0]) / 60;
+                realSunHour = computeRealSunHour(shadowDate, shadowTime);
+                //获取光线:平行光
+                lightDirection = getLight();
+                console.log(lightDirection);
+                DrawScene();
+            }
+        });
+        sliderControl.setValue(720);
+    });
+}
