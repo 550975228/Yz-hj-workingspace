@@ -6,6 +6,8 @@
  * The matrix is replaced by the calculated result.
  */
 
+
+
 /**
  * Constructor of Matrix4
  * If opt_src is specified, new matrix is initialized by opt_src.

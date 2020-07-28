@@ -63,7 +63,7 @@ const computeSolarAzimuth = (dimension, sunDeclination, h, realSunhour) => {
     }
      const jdSolarAltitude = (180/Math.PI)*solarAltitude; // 转换成角度
 
-    return jdSolarAltitude;
+    return solarAltitude;
 }
 
 /**

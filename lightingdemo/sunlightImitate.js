@@ -148,7 +148,7 @@ function unchangeconst() {
         //设置光线的强度和方向
         gl.uniform3f(drawProgram.u_DiffuseLight, 1.0, 1.0, 1.0);    //设置漫反射光
         gl.uniform3fv(drawProgram.u_LightDirection, lightDirection.elements);   // 设置光线方向(世界坐标系下的)
-        gl.uniform3f(drawProgram.u_AmbientLight, 0.4, 0.4, 0.4);    //设置环境光
+        gl.uniform3f(drawProgram.u_AmbientLight, 0.2, 0.2, 0.2);    //设置环境光
         //将绘制在帧缓冲区的纹理传递给颜色缓冲区着色器的0号纹理单元
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
@@ -166,11 +166,12 @@ function setFrameMVPMatrix() {
 
     //视图矩阵
     var viewMatrix = new Matrix4();
-    var r = radius + 10;
-    var eyex = lightDirection.elements[0] * r;
-    var eyey = -lightDirection.elements[1] * r;
+    var r = radius + 3;
+    var eyex = -lightDirection.elements[0] * r;
+    var eyey = lightDirection.elements[1] * r;
     var eyez = lightDirection.elements[2] * r;
     viewMatrix.lookAt(eyex, eyey, eyez, 0, 0, 0, 0, 1, 0);
+    // console.log('eyex:' + eyex + 'eyey:' + eyey + 'eyez:' + eyez);
     //viewMatrix.lookAt(0, 0, r, 0, 0, 0, 0, 1, 0);
 
     //投影矩阵
@@ -227,18 +228,15 @@ function getLight() {
     // var solarAzimuth = 315.0;//太阳方位角.
     t = computeSunHourangle(realSunHour);// 太阳时角
     sunDeclination = computeSunDeclination(n);// 太阳赤纬
-    let hdSolarAltitude = computeSolarAltitude(dimension, sunDeclination, t);
-    solarAltitude = (180 / Math.PI) * hdSolarAltitude; // 转换成角度
-    solarAzimuth = computeSolarAzimuth(dimension, sunDeclination, hdSolarAltitude, realSunHour) * 2;
+    solarAltitude = computeSolarAltitude(dimension, sunDeclination, t);
+    solarAzimuth = computeSolarAzimuth(dimension, sunDeclination, solarAltitude, realSunHour) * 2;
     if (solarAltitude > 0) {
-        var fAltitude = solarAltitude * Math.PI / 180; //光源高度角
-        var fAzimuth = solarAzimuth * Math.PI / 180; //光源方位角
 
-        var arrayvectorX = Math.cos(fAltitude) * Math.cos(fAzimuth);
-        var arrayvectorY = Math.cos(fAltitude) * Math.sin(fAzimuth);
-        var arrayvectorZ = Math.sin(fAltitude);
+        var arrayvectorX = Math.cos(solarAltitude) * Math.cos(solarAzimuth);
+        var arrayvectorY = Math.cos(solarAltitude) * Math.sin(solarAzimuth);
+        var arrayvectorZ = Math.sin(solarAltitude);
 
-        lightDirection = new Vector3([arrayvectorX, arrayvectorY, arrayvectorZ]);
+        lightDirection = new Vector3([arrayvectorY, arrayvectorZ, arrayvectorX]);
     } else {
         lightDirection = new Vector3([0, 0, 0]);
     }
@@ -406,11 +404,11 @@ function initVertexBuffersForCube(gl) {
     var normals = new Float32Array([    // 法线
         0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
         1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
-        0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,// v0-v5-v6-v1 up
-        // 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
+        // 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,// v0-v5-v6-v1 up
+        0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
         -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
-        // 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,  // v7-v4-v3-v2 down
-        0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,// v7-v4-v3-v2 down
+        0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,  // v7-v4-v3-v2 down
+        // 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,// v7-v4-v3-v2 down
         0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0   // v4-v7-v6-v5 back
     ]);
 
@@ -659,12 +657,14 @@ const listenSlider = () => {
             }
             , change: function (value) {
                 //值改变之后 将会改变的地方
+
                 shadowTime = parseInt(value.split("点")[0]) + parseInt(value.split("点")[1].split("分")[0]) / 60;
                 realSunHour = computeRealSunHour(shadowDate, shadowTime);
                 //获取光线:平行光
                 lightDirection = getLight();
-                console.log(lightDirection);
+                // console.log(lightDirection);
                 DrawScene();
+
             }
         });
         sliderControl.setValue(720);
