@@ -54,7 +54,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dart.analysis.tool.window.visible" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/libs" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
@@ -75,7 +75,9 @@
       <workItem from="1595574180883" duration="1144000" />
       <workItem from="1595575424525" duration="4645000" />
       <workItem from="1595811212009" duration="15966000" />
-      <workItem from="1595896485870" duration="25593000" />
+      <workItem from="1595896485870" duration="27817000" />
+      <workItem from="1595983051876" duration="4566000" />
+      <workItem from="1596016726033" duration="664000" />
     </task>
     <servers />
   </component>
@@ -111,6 +113,10 @@
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1046@0.0.1920.1046" timestamp="1595833139543" />
+    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1595985578669">
+      <screen x="0" y="0" width="1920" height="1046" />
+    </state>
+    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1595985578669" />
     <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1595579245575">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
