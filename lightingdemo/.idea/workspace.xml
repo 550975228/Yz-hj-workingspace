@@ -54,11 +54,12 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dart.analysis.tool.window.visible" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/testplace" />
     <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="G:\yz-hj-workingspace\lightingdemo\testplace" />
       <recent name="G:\yz-hj-workingspace\lightingdemo\libs" />
     </key>
   </component>
@@ -77,7 +78,10 @@
       <workItem from="1595811212009" duration="15966000" />
       <workItem from="1595896485870" duration="27817000" />
       <workItem from="1595983051876" duration="4566000" />
-      <workItem from="1596016726033" duration="664000" />
+      <workItem from="1596016726033" duration="1043000" />
+      <workItem from="1596069254587" duration="8628000" />
+      <workItem from="1596154826861" duration="618000" />
+      <workItem from="1596186476422" duration="1844000" />
     </task>
     <servers />
   </component>
@@ -113,14 +117,14 @@
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1046@0.0.1920.1046" timestamp="1595833139543" />
-    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1595985578669">
+    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1596154843555">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
-    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1595985578669" />
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1595579245575">
+    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1596154843555" />
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1596017667275">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2/0.0.1920.1046@0.0.1920.1046" timestamp="1595579245575" />
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2/0.0.1920.1046@0.0.1920.1046" timestamp="1596017667275" />
     <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup" timestamp="1595837918999">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
