@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>这玩意用来测试时间滑块控件的实现的</title>
+    <title>太阳光光照模拟测试</title>
     <style>
         * {
             box-sizing: border-box
@@ -129,7 +129,7 @@
             //计算环境光
             vec3 ambient = u_AmbientLight * v_Color.rgb;
             //用点积计算光与法线夹角的cos值。
-            float nDotL = max(dot(u_LightDirection, normal), 0.0);
+            float nDotL = max(dot(normalize(u_LightDirection), normal), 0.0);
             //计算漫反射光
             vec3 diffuse = u_LightColor * v_Color.rgb * nDotL;
             //阴影贴图
@@ -138,7 +138,7 @@
             //            float depth = unpackDepth(rgbaDepth);
             float visibility = pcf(nDotL, v_PositionFromLight);
             //最终的颜色
-            gl_FragColor = vec4((ambient + diffuse) * visibility, v_Color.a);
+            gl_FragColor = vec4(ambient + diffuse * visibility, v_Color.a);
         }
 
 
