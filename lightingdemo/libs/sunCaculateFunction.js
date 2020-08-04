@@ -24,7 +24,7 @@ const computeSolarAltitude = (dimension, sunDeclination, t) => {
     const sinSolarAltitude = Math.sin(hdDimension) * Math.sin(hdSunDeclination)
         + Math.cos(hdDimension) * Math.cos(hdSunDeclination) * Math.cos(hdT);
     const solarAltitude = Math.asin(sinSolarAltitude);  // 输出太阳高度角的弧度角度
-     const jdSolarAltitude = (180/Math.PI)*solarAltitude; // 转换成角度
+    const jdSolarAltitude = (180/Math.PI)*solarAltitude; // 转换成角度
     return solarAltitude;
 }
 
@@ -37,10 +37,10 @@ const computeSolarAltitude = (dimension, sunDeclination, t) => {
 
  */
 const computeSunDeclination = (n) => {
-    // 公式2
-    sinSundegree = 0.39795 * Math.cos(0.98563 * (n - 173) / 180 * Math.PI);
-    const sundegree = Math.asin(sinSundegree);
-    return sundegree;
+    let b = 2 * Math.PI * (n - 1) / 365;
+    // var sinSundegree = 0.39795 * Math.cos(0.98563 * (n - 173) / 180 * Math.PI);
+    const sinSundegree = 0.006918 - 0.399912 * Math.cos(b) + 0.070257 * Math.sin(b) - 0.006758 * Math.cos(2 * b) + 0.000907 * Math.sin(2 * b) - 0.002697 * Math.cos(3 * b) + 0.00148 * Math.sin(3 * b);
+    return Math.asin(sinSundegree);
 }
 /**
  * @description:  太阳方位角计算公式
@@ -61,7 +61,7 @@ const computeSolarAzimuth = (dimension, sunDeclination, h, realSunhour) => {
     } else {
         solarAltitude = 2 * Math.PI - Math.acos(solarAzimuth); // 太阳方位角的弧度角度
     }
-     const jdSolarAltitude = (180/Math.PI)*solarAltitude; // 转换成角度
+    //const jdSolarAltitude = (180 / Math.PI) * solarAltitude; // 转换成角度
 
     return solarAltitude;
 }
@@ -69,21 +69,23 @@ const computeSolarAzimuth = (dimension, sunDeclination, h, realSunhour) => {
 /**
  * @description: 计算真太阳时
  * @params:  { sunHour } 平太阳时，日常时间  "13.45"
- * @params:  { date } 平太阳时，日常时间  "2018/10/29" "2020/7/28"
+ * @params:  { date } 平太阳时，日常时间   "2020/7/28"
+ * @params:  { lat } 纬度
  * @return:
  * @example:
 
  */
 
 const computeRealSunHour = (date, sunHour) => {
-    const dateStringArray = date.split("/");
-    const dateString = dateStringArray[1] + "月" + dateStringArray[2] + "日";
-    const timeDifference = window.sunRealHour.filter(item => item.name === dateString)[0].value;
-    const symbol = timeDifference.substr(0, 1);
-    const fen = timeDifference.substr(1, 2);
+    const dateStringArray = date.split("/");//将日期分开
+    const dateString = dateStringArray[1] + "月" + dateStringArray[2] + "日";//取出月日，设置格式
+    const timeDifference = window.sunRealHour.filter(item => item.name === dateString)[0].value;//取出对应天数时差
+    const symbol = timeDifference.substr(0, 1);//取正负
+    const fen = timeDifference.substr(1, 2);//取分钟
     let miao;
     if (fen.length === 7) {
         miao = timeDifference.substr(4, 2);
+
     } else {
         miao = timeDifference.substr(4, 1);
     }
@@ -120,4 +122,15 @@ Date.prototype.Format = function (fmt) {
     for (let k in o)
         if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
     return fmt;
+}
+/**
+ * 计算当前日期到一月一日的天数
+ * @Para {date} 当前日期
+ *
+ */
+const computerDayFromNewYear = (nowDate) => {
+    const newYearDay = nowDate.split("/")[0] + "/1/1";
+    const beginDay = new Date(newYearDay);
+    const today = new Date(nowDate);
+    return (today.getTime() - beginDay.getTime()) / (24 * 60 * 60 * 1000);
 }

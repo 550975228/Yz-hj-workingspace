@@ -39,8 +39,34 @@
             display: block;
         }
     </style>
-    <link rel="stylesheet" href="libs/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../libs/layui/css/layui.css" media="all">
+    <script id="frameVertexShader" type="x-shader/x-vertex">
+        //设置阴影顶点着色器
+        attribute vec4 a_Position;
+        attribute vec4 a_Color;
+        uniform mat4 u_MvpMatrix;
+        varying vec4 v_Color;
+        void main() {
+            gl_Position = u_MvpMatrix * a_Position;
+            v_Color = a_Color;
+        }
+    </script>
+    <script id="frameFragmentShader" type="x-shader/x-vertex">
+        //设置阴影片元着色器
+        precision highp float;
+        varying vec4 v_Color;
+        const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);
+        const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+        vec4 packDepth (float depth) {
+            vec4 rgbaDepth = fract(depth * bitShift);
+            rgbaDepth -= rgbaDepth.gbaa * bitMask;
+            return rgbaDepth;
+        }
 
+        void main() {
+            gl_FragColor = packDepth(gl_FragCoord.z);
+        }
+    </script>
     <script id="vertexShader" type="x-shader/x-vertex">
         attribute vec4 a_Position;//顶点数据
         attribute vec4 a_Normal;//法线数据
@@ -48,10 +74,13 @@
         uniform mat4 u_MvpMatrix;//模型视图投影矩阵
         uniform mat4 u_ModelMatrix;// 模型矩阵
         uniform mat4 u_NormalMatrix;// 模型的逆转置矩阵，用于计算变化后的法线。
+        uniform mat4 u_mvpMatrixFromLight;//接收点到光源的距离的矩阵
+        varying vec4 v_PositionFromLight;//点到光源位置数组
         varying vec4 v_Color;//顶点颜色
         varying vec3 v_Normal;//变化之后的顶点的法线
         varying vec3 v_Position;//世界坐标系中的顶点位置
         void main() {
+            v_PositionFromLight = u_mvpMatrixFromLight * a_Position;
             gl_Position = u_MvpMatrix * a_Position;//球的位置
             v_Position = vec3(u_ModelMatrix * a_Position);//计算顶点在世界坐标系中的位置。
             v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));//计算变化之后的顶点法线
@@ -64,12 +93,36 @@
         #ifdef GL_ES
         precision highp float;
         #endif
+        uniform sampler2D u_Sampler;//阴影贴图
         uniform vec3 u_LightColor;// 灯光颜色
         uniform vec3 u_LightDirection;// 光源的位置
         uniform vec3 u_AmbientLight;// 环境光颜色
         varying vec3 v_Normal;//顶点法线
         varying vec3 v_Position;//顶点位置
         varying vec4 v_Color;//顶点颜色
+        varying vec4 v_PositionFromLight;
+        float unpackDepth(const in vec4 rgbaDepth) {
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            float depth = dot(rgbaDepth, bitShift);
+            return depth;
+        }
+        float pcf(float cosTheta, vec4 position) {
+            float shadows = 0.0;
+            float opacity = 0.4;
+            float texelSize = 1.0/4096.0;
+            vec4 rgbaDepth;
+            vec3 shadowCoord = (position.xyz/position.w)/2.0 + 0.5;
+            float bias = 0.005 * tan(acos(cosTheta));
+            bias = clamp(bias, 0.0015, 0.01);
+            for (float y=-1.5; y <= 1.5; y += 1.0){
+                for (float x=-1.5; x <=1.5; x += 1.0){
+                    rgbaDepth = texture2D(u_Sampler, shadowCoord.xy + vec2(x, y) * texelSize);
+                    shadows += step(shadowCoord.z - bias, unpackDepth(rgbaDepth));
+                }
+            }
+            shadows /= 16.0;
+            return min(opacity + shadows, 1.0);
+        }
         void main() {
             //再次对法线归一化，因为被插值了。
             vec3 normal = normalize(v_Normal);
@@ -79,8 +132,13 @@
             float nDotL = max(dot(normalize(u_LightDirection), normal), 0.0);
             //计算漫反射光
             vec3 diffuse = u_LightColor * v_Color.rgb * nDotL;
+            //阴影贴图
+            //            vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;
+            //            vec4 rgbaDepth = texture2D(u_Sampler, shadowCoord.xy);
+            //            float depth = unpackDepth(rgbaDepth);
+            float visibility = pcf(nDotL, v_PositionFromLight);
             //最终的颜色
-            gl_FragColor = vec4(ambient + diffuse, v_Color.a);
+            gl_FragColor = vec4(ambient + diffuse * visibility, v_Color.a);
         }
 
 
