@@ -48,7 +48,8 @@
         void main() {
             v_position = a_position;
             gl_Position = a_position;
-            gl_Position.z = 1.0;
+
+            //            gl_Position.z = 1.0;
         }
 
     </script>
@@ -57,12 +58,11 @@
         precision highp float;
 
         uniform samplerCube u_skybox;
-        uniform mat4 u_viewDirectionProjectionInverse;
-
+        uniform mat4 u_vpMatrix;
         varying vec4 v_position;
         void main() {
-            vec4 t = u_viewDirectionProjectionInverse * v_position;
-            gl_FragColor = textureCube(u_skybox, normalize(t.xyz / t.w));
+            vec4 t = u_vpMatrix * v_position;
+            gl_FragColor = textureCube(u_skybox, normalize(t.xyz/t.w));
         }
 
     </script>

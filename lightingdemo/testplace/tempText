@@ -1,0 +1,6 @@
+    //模型矩阵
+    var modelMatrix = new Matrix4();
+    modelMatrix.scale(curScale, curScale, curScale);
+    modelMatrix.rotate(currentAngle[0], 1.0, 0.0, 0.0); // Rotation around x-axis
+    modelMatrix.rotate(currentAngle[1], 0.0, 1.0, 0.0); // Rotation around y-axis
+    modelMatrix.translate(-centerX, -centerY, -centerZ);

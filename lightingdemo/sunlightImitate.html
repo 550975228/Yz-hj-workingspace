@@ -40,6 +40,31 @@
         }
     </style>
     <link rel="stylesheet" href="../libs/layui/css/layui.css" media="all">
+    <script id="vsForSkyBox" type="x-shader/x-vertex">
+        //设置天空盒着色器
+        attribute vec4 a_position;
+        varying vec4 v_position;
+        void main() {
+            v_position = a_position;
+            gl_Position = a_position;
+
+            //            gl_Position.z = 1.0;
+        }
+
+    </script>
+
+    <script id="fsForSkyBox" type="x-shader/x-vertex">
+        precision highp float;
+
+        uniform samplerCube u_skybox;
+        uniform mat4 u_vpMatrix;
+        varying vec4 v_position;
+        void main() {
+            vec4 t = u_vpMatrix * v_position;
+            gl_FragColor = textureCube(u_skybox, normalize(t.xyz/t.w));
+        }
+
+    </script>
     <script id="frameVertexShader" type="x-shader/x-vertex">
         //设置阴影顶点着色器
         attribute vec4 a_Position;
@@ -49,6 +74,7 @@
         void main() {
             gl_Position = u_MvpMatrix * a_Position;
             v_Color = a_Color;
+
         }
     </script>
     <script id="frameFragmentShader" type="x-shader/x-vertex">

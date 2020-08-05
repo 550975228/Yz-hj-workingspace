@@ -54,7 +54,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dart.analysis.tool.window.visible" value="false" />
-    <property name="last_opened_file_path" value="$USER_HOME$/Desktop/1727_07" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
@@ -88,7 +88,8 @@
       <workItem from="1596186476422" duration="3548000" />
       <workItem from="1596414839091" duration="20479000" />
       <workItem from="1596501114881" duration="26717000" />
-      <workItem from="1596587455481" duration="19005000" />
+      <workItem from="1596587455481" duration="23493000" />
+      <workItem from="1596617349518" duration="60000" />
     </task>
     <servers />
   </component>
@@ -120,14 +121,18 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="696" y="319" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1596615613015">
+      <screen x="0" y="0" width="1920" height="1046" />
+    </state>
+    <state x="696" y="319" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1046@0.0.1920.1046" timestamp="1596615613015" />
     <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1595833139543">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1046@0.0.1920.1046" timestamp="1595833139543" />
-    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1596609547199">
+    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1596613411823">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
-    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1596609547199" />
+    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1596613411823" />
     <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1596188995839">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
