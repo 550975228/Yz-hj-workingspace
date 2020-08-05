@@ -1,8 +1,7 @@
 {
     var gl, fsForSkyBox, vsForSkyBox, canvas, skyboxProgram;
-    var cubemap;
-    var skyBoxbuffer;
-    var image_counter = 0;
+    var then = 0;
+    var positionBuffer;
 }
 {
     //注册鼠标事件
@@ -14,22 +13,17 @@
     var fov = 1.5;
     var aspect = 1.0;
 }
+var keys = {};
 
-function initProgramAndShader() {
-    canvas = document.getElementById("canvas");
-    if (!canvas) console.log("获取canvas标签失败");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl = getWebGLContext(canvas);
-    if (!gl) console.log("初始化gl失败");
-    fsForSkyBox = document.getElementById("fsForSkyBox").innerHTML;
-    vsForSkyBox = document.getElementById("vsForSkyBox").innerHTML;
-    skyboxProgram = createProgram(gl, vsForSkyBox, fsForSkyBox);
-    if (!skyboxProgram) console.log("初始化着色器失败");
-
+function handleKeyDown(event)
+{
+    keys[event.keyCode] = true;
 }
 
-
+function handleKeyUp(event)
+{
+    keys[event.keyCode] = false;
+}
 function handleMouseDown(event) {
     mouseDown = true;
     lastMouseX = event.clientX;
@@ -102,6 +96,7 @@ function perspectiveMatrixInverse(fov, aspect, near, far) {
         0, 0, 1, z1
     ];
 }
+
 //矩阵乘法a*b
 function mul(a, b) {
     var r = [];
@@ -130,85 +125,155 @@ function mul(a, b) {
 }
 
 
-function loadCubeMap(base) {
-    var skyTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyTexture);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+function main() {
+    initProgramAndShader();
+    positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    setGeometry();
+    loadSkyBox();
+    draw();
 
-    var faces = [
-        ["posx.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_X],
-        ["negx.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_X],
-        ["posy.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_Y],
-        ["negy.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_Y],
-        ["posz.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_Z],
-        ["negz.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_Z]
-    ];
-    for (var i = 0; i < faces.length; i++) {
-        var face = faces[i][1];
-        var image = new Image();
-        image.onload = function (skyTexture, face, image) {
-            return function () {
-                gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyTexture);
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-                gl.texImage2D(face, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-                image_counter++;
-                if (image_counter == 6) {
-                    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-                }
-                requestAnimationFrame(draw);
-            }
-        }(skyTexture, face, image);
-        image.src = base + '/' + faces[i][0];
-    }
-    return skyTexture;
 }
 
-function main(base) {
-    initProgramAndShader();
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    aspect = canvas.width / canvas.height;
+function initProgramAndShader() {
+    canvas = document.getElementById("canvas");
+    if (!canvas) console.log("获取canvas标签失败");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl = getWebGLContext(canvas);
+    if (!gl) console.log("初始化gl失败");
+    fsForSkyBox = document.getElementById("fsForSkyBox").innerHTML;
+    vsForSkyBox = document.getElementById("vsForSkyBox").innerHTML;
+    skyboxProgram = createProgram(gl, vsForSkyBox, fsForSkyBox);
+    if (!skyboxProgram) console.log("初始化着色器失败");
+    //获取变量
+    skyboxProgram.a_position = gl.getAttribLocation(skyboxProgram, "a_position");
+    skyboxProgram.u_viewDirectionProjectionInverse = gl.getUniformLocation(skyboxProgram, "u_viewDirectionProjectionInverse");
+    skyboxProgram.u_skybox = gl.getUniformLocation(skyboxProgram, "u_skybox");
+    if (skyboxProgram.a_position<0 || !skyboxProgram.u_viewDirectionProjectionInverse || !skyboxProgram.u_skybox) console.log("获取数据失败");
 
-    gl.useProgram(skyboxProgram);
+}
+function loadSkyBox() {
+    var skyTexture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyTexture);
+    const faceInfos = [
+        {
+            target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+            url: '../libs/images/posx.jpg',
+        },
+        {
+            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+            url: '../libs/images/negx.jpg',
+        },
+        {
+            target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+            url: '../libs/images/posy.jpg',
+        },
+        {
+            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            url: '../libs/images/negy.jpg',
+        },
+        {
+            target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+            url: '../libs/images/posz.jpg',
+        },
+        {
+            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+            url: '../libs/images/negz.jpg',
+        },
+    ];
 
-    skyboxProgram.a_Position = gl.getAttribLocation(skyboxProgram, "a_Position");
-    gl.enableVertexAttribArray(skyboxProgram.a_Position);
-    skyBoxbuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, skyBoxbuffer);
-    var vertices = new Float32Array([-1, -1, 3, -1, -1, 3]);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(skyboxProgram.a_Position, 2, gl.FLOAT, false, 0, 0);
-
-    skyboxProgram.u_MvpMatrix = gl.getUniformLocation(skyboxProgram, "u_MvpMatrix");
-    skyboxProgram.u_SkyBox = gl.getUniformLocation(skyboxProgram, "u_SkyBox");
-    if(skyboxProgram.a_Position<0||!skyboxProgram.u_MvpMatrix||!skyboxProgram.u_SkyBox) console.log("获取数据失败");
-    cubemap = loadCubeMap(base);
-
+    faceInfos.forEach((faceInfo) => {
+        const {target, url} = faceInfo;
+        //上传贴图到面
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const format = gl.RGBA;
+        const width = 2048;
+        const height = 2048;
+        const type = gl.UNSIGNED_BYTE;
+        //设置每个面使其可以渲染
+        gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+        //异步加载图片
+        const image = new Image();
+        image.src = url;
+        // console.log(url);
+        image.addEventListener('load', function () {
+            // Now that the image has loaded make copy it to the texture.
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyTexture);
+            gl.texImage2D(target, level, internalFormat, format, type, image);
+            gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+            // console.log(image);
+        });
+    });
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+}
+function setGeometry() {
+    var positions = new Float32Array(
+        [
+            -1, -1,
+            1, -1,
+            -1, 1,
+            -1, 1,
+            1, -1,
+            1, 1,
+        ]);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+}
+function draw(time) {
+    document.onkeydown = handleKeyDown;
+    document.onkeyup = handleKeyUp;
     canvas.onmousedown = handleMouseDown;
     document.onmouseup = handleMouseUp;
     document.onmousemove = handleMouseMove;
     canvas.onwheel = handleMouseWheel;
+    time *= 0.001;
+    var deltaTime = time - then;
+    then = time;
 
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.enableVertexAttribArray(skyboxProgram.a_position);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    var size = 2;
+    var type = gl.FLOAT;
+    var normalize = false;
+    var stride = 0;
+    var offset = 0;
+    gl.vertexAttribPointer(
+        skyboxProgram.a_position, size, type, normalize, stride, offset
+    );
+    var aspect =canvas.clientWidth / canvas.clientHeight;
+    var projectionMatrix = new Matrix4();
+    projectionMatrix.setPerspective(50, aspect, 1, 2000);
+
+    var cameraPosition = [Math.cos(then * .1), 0, Math.sin(then * .1)];
+    // console.log(Math.sin(time * .1));
+
+    var target = [0, 0, 0];
+    var up = [0, 1, 0];
+    var cameraMatrix = new Matrix4();
+    // cameraMatrix.lookAt(Math.cos(time * .1), 0,  Math.sin(time * .1), 0, 0, 0, 0, 1, 0);
+    cameraMatrix.lookAt(0.9,0.0,0.1,0.0,0.0,0.0,0.0,1.0,0.0);
+    var viewMatrix = new Matrix4();
+    viewMatrix.setInverseOf(cameraMatrix);
+    // viewMatrix[12] = 0;
+    // viewMatrix[13] = 0;
+    // viewMatrix[14] = 0;
+    var viewDirectionProjectionMatrix = new Matrix4();
+    viewDirectionProjectionMatrix.multiply(projectionMatrix).multiply(viewMatrix);
+    var viewDirectionProjectionInverseMatrix = new Matrix4();
+    viewDirectionProjectionInverseMatrix.setInverseOf(viewDirectionProjectionMatrix);
+    gl.useProgram(skyboxProgram);
+    gl.uniformMatrix4fv(skyboxProgram.u_viewDirectionProjectionInverse,false,viewDirectionProjectionInverseMatrix.elements);
+    gl.uniform1i(skyboxProgram.u_skybox,1);
+    gl.depthFunc(gl.LEQUAL);
+    gl.drawArrays(gl.TRIANGLES,0,1 * 6);
     requestAnimationFrame(draw);
-}
-
-function draw() {
-    if (image_counter < 6) {
-        gl.clearColor(0.0, image_counter / 6.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-    } else {
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubemap);
-        gl.uniform1i(skyboxProgram.u_SkyBox, 0);
-
-        var v = rotateXY(angle_x, angle_y);
-        var p = perspectiveMatrixInverse(fov, aspect, 0.01, 100.0);
-        var mat = mul(p, v);
-        gl.uniformMatrix4fv(skyboxProgram.u_MvpMatrix, false, mat);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-    gl.flush();
 }

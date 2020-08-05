@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>天空盒加载测试</title>
+    <title>纹理测试</title>
     <style>
         * {
             box-sizing: border-box
@@ -42,27 +42,26 @@
     <link rel="stylesheet" href="../libs/layui/css/layui.css" media="all">
 
 
-    <script id="vsForSkyBox" type="x-shader/x-vertex">
+    <script id="vs" type="x-shader/x-vertex">
         attribute vec4 a_position;
-        varying vec4 v_position;
+        attribute vec2 a_TexCoord;
+
+        varying vec2 v_TexCoord;
         void main() {
-            v_position = a_position;
+            v_TexCoord = a_TexCoord;
             gl_Position = a_position;
-            gl_Position.z = 1.0;
         }
 
     </script>
 
-    <script id="fsForSkyBox" type="x-shader/x-vertex">
+    <script id="fs" type="x-shader/x-vertex">
         precision highp float;
 
-        uniform samplerCube u_skybox;
-        uniform mat4 u_viewDirectionProjectionInverse;
+        uniform sampler2D u_Sampler;
+        varying vec2 v_TexCoord;
 
-        varying vec4 v_position;
         void main() {
-            vec4 t = u_viewDirectionProjectionInverse * v_position;
-            gl_FragColor = textureCube(u_skybox, normalize(t.xyz / t.w));
+            gl_FragColor = texture2D(u_Sampler, v_TexCoord);
         }
 
     </script>
@@ -71,7 +70,7 @@
 
 <div class="leftcolumn">
     <div class="card">
-        <h2 style="text-align: center">天空盒加载测试</h2>
+        <h2 style="text-align: center">纹理加载测试</h2>
         <canvas id="canvas"></canvas>
     </div>
 </div>
@@ -95,7 +94,7 @@
 <script src="../libs/webgl_debug.js"></script>
 <script src="../libs/cuon_matrix.js"></script>
 <script src="../libs/cuon_utils.js"></script>
-<script src="skyBox.js"></script>
+<script src="texture.js"></script>
 
 </body>
 </html>
