@@ -100,8 +100,8 @@
         uniform mat4 u_MvpMatrix;//模型视图投影矩阵
         uniform mat4 u_ModelMatrix;// 模型矩阵
         uniform mat4 u_NormalMatrix;// 模型的逆转置矩阵，用于计算变化后的法线。
-        uniform mat4 u_mvpMatrixFromLight;//接收点到光源的距离的矩阵
-        varying vec4 v_PositionFromLight;//点到光源位置数组
+        uniform mat4 u_mvpMatrixFromLight;//接收点到光源的距离的矩阵，写阴影贴图用
+        varying vec4 v_PositionFromLight;//点到光源位置数组，写阴影贴图用
         varying vec4 v_Color;//顶点颜色
         varying vec3 v_Normal;//变化之后的顶点的法线
         varying vec3 v_Position;//世界坐标系中的顶点位置
@@ -121,7 +121,7 @@
         #endif
         uniform sampler2D u_Sampler;//阴影贴图
         uniform vec3 u_LightColor;// 灯光颜色
-        uniform vec3 u_LightDirection;// 光源的位置
+        uniform vec3 u_LightDirection;// 光方向
         uniform vec3 u_AmbientLight;// 环境光颜色
         varying vec3 v_Normal;//顶点法线
         varying vec3 v_Position;//顶点位置
