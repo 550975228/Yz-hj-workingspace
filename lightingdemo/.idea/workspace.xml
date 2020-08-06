@@ -35,6 +35,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="HTML File" />
+        <option value="GLSL Shader" />
         <option value="JavaScript File" />
       </list>
     </option>
@@ -91,7 +92,7 @@
       <workItem from="1596587455481" duration="23493000" />
       <workItem from="1596617349518" duration="60000" />
       <workItem from="1596617420289" duration="5108000" />
-      <workItem from="1596675018802" duration="8621000" />
+      <workItem from="1596675018802" duration="18672000" />
     </task>
     <servers />
   </component>
