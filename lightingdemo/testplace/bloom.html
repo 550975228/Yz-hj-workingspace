@@ -43,29 +43,31 @@
 
 
     <script id="vsForBloom" type="x-shader/x-vertex">
-        uniform mat4 u_MVPMatrix;
-        attribute vec4 a_Position;
-        attribute float a_PointSize;
-        varying vec3 position;
+        attribute vec2 a_Position;
         void main(){
-            position = vec3 (u_MVPMatrix * a_Position);
-            gl_Position = u_MVPMatrix * a_Position;
-            gl_PointSize=a_PointSize;
+            gl_Position =vec4(a_Position,0.0,1.0);
         }
 
     </script>
 
     <script id="fsForBloom" type="x-shader/x-vertex">
         precision highp float;
-
-        varying vec3 position;
+        uniform float width;
+        uniform float height;
+        uniform vec2 lightPosition;
         void main(){
-            float dist = 1./length(normalize(position));
+            vec2 resolution = vec2(width, height);
+            vec2 uv = gl_FragCoord.xy/resolution.xy;
+            float ratio = resolution.x/resolution.y;
+//            vec2 lightPosition = vec2(0.2, 0.5);
+            vec2 pos = lightPosition - uv;
+            pos.y /= ratio;
+            float dist = 1.0/length(pos);
             dist *= 0.1;
             dist = pow(dist, 0.8);
             vec3 col = dist * vec3(0.4, 0.4, 0.4);
-            col = 1.0 - exp(-col);
-            gl_FragColor = vec4(0.5,0.5,0.5, 1.0);
+            col = 1.0 - exp( -col );
+            gl_FragColor = vec4(col, 1.0);
         }
     </script>
 </head>
