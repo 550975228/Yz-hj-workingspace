@@ -598,7 +598,7 @@ function draw() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
     var moveZ = -5;
-    var moveY=-5;
+    var moveY=-10;
     //绘制球阴影
     drawShadowInFrame(frameProgram, sphere, 2, moveY, moveZ, angle);
     mvpFrameForSphere.set(g_mvpMatrix);
@@ -648,7 +648,15 @@ function drawSkyBox() {
     setSkyVpMatrix();
     gl.useProgram(skyboxProgram);
     gl.uniform1i(skyboxProgram.u_skybox, 1);
-    gl.uniform2fv(skyboxProgram.lightPosition,new Float32Array([0.8,0.55]));
+    let lightPosition = getLight();
+    let positionX = lightPosition.elements[0];
+    let positionY = lightPosition.elements[1];
+    if(positionX ==0&&positionY==0){
+        positionX=-10;
+        positionY=-10;
+    }
+    // console.log("positionX is :"+positionX+"positionY is :"+positionY);
+    gl.uniform2fv(skyboxProgram.lightPosition,new Float32Array([positionX,positionY]));
     gl.uniform1f(skyboxProgram.width, window.innerWidth);
     gl.uniform1f(skyboxProgram.height, window.innerHeight);
     gl.depthFunc(gl.LEQUAL);
@@ -686,7 +694,7 @@ function animate(angle) {
 function setLightElements() {
     lightDirection = getLight();
     //设置灯光位置
-    var r = 12.0;
+    var r = 7.0;
     var light_x = lightDirection.elements[0] * r;
     var light_y = lightDirection.elements[1] * r;
     var light_z = lightDirection.elements[2] * r;
@@ -746,6 +754,7 @@ function setMatrixAndDrawInDraw(program, obj, x, y, z, angle) {
 
 const listenSlider = () => {
     var sliderControl;
+    var realValue;
     layui.use('slider', function () {
         var $ = layui.$
             , slider = layui.slider;
@@ -756,14 +765,17 @@ const listenSlider = () => {
             , showstep: true
             , step: 1
             , setTips: function (value) {
+                realValue = value;
                 return parseInt(value / 60) + '点' + value % 60 + '分';
             }
             , change: function (value) {
+
                 //值改变之后 将会改变的地方
                 shadowTime = parseInt(value.split("点")[0]) + parseInt(value.split("点")[1].split("分")[0]) / 60;
                 //console.log(shadowTime);
                 realSunHour = computeRealSunHour(shadowDate, shadowTime);
                 //lightColor=((600-parseFloat(value))*0.001);
+
             }
         });
         sliderControl.setValue(720);

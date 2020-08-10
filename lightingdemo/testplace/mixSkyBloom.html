@@ -56,8 +56,8 @@
 
     <script id="fsForSkyBox" type="x-shader/x-vertex">
         precision highp float;
-        uniform float width;
-        uniform float height;
+        uniform float skyBoxWidth;
+        uniform float skyBoxHeight;
         uniform vec2 lightPosition;
         uniform samplerCube u_skybox;
         uniform mat4 u_vpMatrix;
@@ -66,7 +66,7 @@
             //天空盒
             vec4 t = u_vpMatrix * v_position;
             vec4 skyBoxColor = textureCube(u_skybox, normalize(t.xyz/t.w));
-            vec2 resolution = vec2(width, height);
+            vec2 resolution = vec2(skyBoxWidth, skyBoxHeight);
             vec2 uv = gl_FragCoord.xy/resolution.xy;
             float ratio = resolution.x/resolution.y;
             //            vec2 lightPosition = vec2(0.2, 0.5);

@@ -54,19 +54,32 @@
         precision highp float;
         uniform float width;
         uniform float height;
+        uniform vec3 sunColor;
         uniform vec2 lightPosition;
         void main(){
             vec2 resolution = vec2(width, height);
-            vec2 uv = gl_FragCoord.xy/resolution.xy;
+//            vec2 uv = gl_FragCoord.xy/resolution.xy;
+//            vec2 uv = (2.0 * gl_FragCoord.xy - resolution.xy) / min(resolution.y, resolution.x);
+            vec2 uv = gl_FragCoord.xy / resolution.xy;
+            uv.x = 2.0*uv.x -1.0;
+            uv.y = 2.0 * uv.y-0.2;
+//            uv.x *=resolution.x/resolution.y;
+            uv.y *=resolution.y/resolution.x;
             float ratio = resolution.x/resolution.y;
 //            vec2 lightPosition = vec2(0.2, 0.5);
             vec2 pos = lightPosition - uv;
-            pos.y /= ratio;
+//            pos.y /= ratio;
             float dist = 1.0/length(pos);
             dist *= 0.1;
-            dist = pow(dist, 0.9);
-            float lareFrameColor = 0.2;
-            vec3 col = dist * vec3(lareFrameColor, lareFrameColor, lareFrameColor);
+            dist = pow(dist, 0.5);
+            float colorR = sunColor.x  ;
+//            float colorR = 1.0  ;
+//            float colorG = 0.5  ;
+//            float colorB = 0.25  ;
+            float colorG = sunColor.y  ;
+            float colorB = sunColor.z  ;
+
+            vec3 col = dist * vec3(colorR, colorG, colorB);
             col = 1.0 - exp( -col );
             gl_FragColor = vec4(col, 1.0);
         }

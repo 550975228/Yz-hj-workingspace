@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>太阳光光照模拟测试</title>
+    <title>太阳光影变化</title>
     <style>
         * {
             box-sizing: border-box
@@ -66,19 +66,26 @@
             vec4 t = u_vpMatrix * v_position;
             vec4 skyBoxColor = textureCube(u_skybox, normalize(t.xyz/t.w));
             vec2 resolution = vec2(width, height);
-            vec2 uv = gl_FragCoord.xy/resolution.xy;
+            //            vec2 uv = gl_FragCoord.xy/resolution.xy;
+            //            vec2 uv = (2.0 * gl_FragCoord.xy - resolution.xy) / min(resolution.y, resolution.x);
+            vec2 uv = gl_FragCoord.xy / resolution.xy;
+            uv.x = 2.0*uv.x -1.0;
+            uv.y = 2.0 * uv.y-0.2;
+            //            uv.x *=resolution.x/resolution.y;
+            uv.y *=resolution.y/resolution.x;
             float ratio = resolution.x/resolution.y;
             //            vec2 lightPosition = vec2(0.2, 0.5);
             vec2 pos = lightPosition - uv;
-            pos.y /= ratio;
+            //            pos.y /= ratio;
             float dist = 1.0/length(pos);
             dist *= 0.1;
-            dist = pow(dist, 0.9);
-            float lareFrameColor = 0.2;
+            dist = pow(dist, 1.0);
+            float lareFrameColor =0.3;
             vec3 col = dist * vec3(lareFrameColor, lareFrameColor, lareFrameColor);
             col = 1.0 - exp( -col );
             vec4 lareFlame = vec4(col, 1.0);
 
+            gl_FragColor = mix(skyBoxColor,lareFlame,0.1);
             gl_FragColor = skyBoxColor + lareFlame;
         }
     </script>
@@ -191,7 +198,7 @@
 
 <div class="leftcolumn">
     <div class="card">
-        <h2 style="text-align: center">太阳光光照模拟</h2>
+        <h2 style="text-align: center">太阳光影变化</h2>
         <canvas id="canvas"></canvas>
     </div>
 </div>

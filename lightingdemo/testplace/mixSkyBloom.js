@@ -26,11 +26,11 @@ function initProgramAndShader() {
     skyboxProgram.a_position = gl.getAttribLocation(skyboxProgram, "a_position");
     skyboxProgram.u_vpMatrix = gl.getUniformLocation(skyboxProgram, "u_vpMatrix");
     skyboxProgram.u_skybox = gl.getUniformLocation(skyboxProgram, "u_skybox");
-    skyboxProgram.width = gl.getUniformLocation(skyboxProgram, "width");
-    skyboxProgram.height = gl.getUniformLocation(skyboxProgram, "height");
+    skyboxProgram.skyBoxWidth = gl.getUniformLocation(skyboxProgram, "skyBoxWidth");
+    skyboxProgram.skyBoxHeight = gl.getUniformLocation(skyboxProgram, "skyBoxHeight");
     skyboxProgram.lightPosition = gl.getUniformLocation(skyboxProgram, "lightPosition");
     if (skyboxProgram.a_position < 0 || !skyboxProgram.u_vpMatrix || !skyboxProgram.u_skybox) console.log("获取数据失败");
-    if (!skyboxProgram.width || !skyboxProgram.height || !skyboxProgram.lightPosition) console.log("获取bloom变量失败");
+    if (!skyboxProgram.skyBoxWidth || !skyboxProgram.skyBoxHeight || !skyboxProgram.lightPosition) console.log("获取bloom变量失败");
 }
 
 function loadSkyBox() {
@@ -128,8 +128,8 @@ function drawSkyBox() {
     gl.useProgram(skyboxProgram);
     gl.uniform1i(skyboxProgram.u_skybox, 1);
     gl.uniform2fv(skyboxProgram.lightPosition,new Float32Array([0.8,0.55]));
-    gl.uniform1f(skyboxProgram.width, window.innerWidth);
-    gl.uniform1f(skyboxProgram.height, window.innerHeight);
+    gl.uniform1f(skyboxProgram.skyBoxWidth, window.innerWidth);
+    gl.uniform1f(skyboxProgram.skyBoxHeight, window.innerHeight);
     gl.depthFunc(gl.LEQUAL);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.useProgram(null);
