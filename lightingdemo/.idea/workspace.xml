@@ -34,8 +34,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="HTML File" />
         <option value="GLSL Shader" />
+        <option value="HTML File" />
         <option value="JavaScript File" />
       </list>
     </option>
@@ -55,17 +55,17 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="dart.analysis.tool.window.visible" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../webstorm/workingSpace" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Desktop/太阳光影变化示例" />
     <property name="nodejs_package_manager_path" value="npm" />
   </component>
   <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="G:\yz-hj-workingspace\lightingdemo\testplace" />
+    </key>
     <key name="CopyFile.RECENT_KEYS">
       <recent name="G:\yz-hj-workingspace\lightingdemo\libs\images" />
       <recent name="G:\yz-hj-workingspace\lightingdemo\testplace" />
       <recent name="G:\yz-hj-workingspace\lightingdemo\libs" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="G:\yz-hj-workingspace\lightingdemo\testplace" />
     </key>
   </component>
   <component name="SvnConfiguration">
@@ -93,7 +93,8 @@
       <workItem from="1596617349518" duration="60000" />
       <workItem from="1596617420289" duration="5108000" />
       <workItem from="1596675018802" duration="19101000" />
-      <workItem from="1596760544526" duration="10347000" />
+      <workItem from="1596760544526" duration="23961000" />
+      <workItem from="1597019494672" duration="14703000" />
     </task>
     <servers />
   </component>
@@ -133,10 +134,10 @@
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="690" y="269" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1046@0.0.1920.1046" timestamp="1595833139543" />
-    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1596682899797">
+    <state x="740" y="278" key="FileChooserDialogImpl" timestamp="1596793615983">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
-    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1596682899797" />
+    <state x="740" y="278" key="FileChooserDialogImpl/0.0.1920.1046@0.0.1920.1046" timestamp="1596793615983" />
     <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1596188995839">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
@@ -145,9 +146,9 @@
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
     <state x="753" y="436" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1920.1046@0.0.1920.1046" timestamp="1596617456212" />
-    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup" timestamp="1596509282468">
+    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup" timestamp="1597040089862">
       <screen x="0" y="0" width="1920" height="1046" />
     </state>
-    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup/0.0.1920.1046@0.0.1920.1046" timestamp="1596509282468" />
+    <state x="1349" y="367" width="672" height="678" key="search.everywhere.popup/0.0.1920.1046@0.0.1920.1046" timestamp="1597040089862" />
   </component>
 </project>

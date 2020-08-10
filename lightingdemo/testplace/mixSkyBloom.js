@@ -26,8 +26,11 @@ function initProgramAndShader() {
     skyboxProgram.a_position = gl.getAttribLocation(skyboxProgram, "a_position");
     skyboxProgram.u_vpMatrix = gl.getUniformLocation(skyboxProgram, "u_vpMatrix");
     skyboxProgram.u_skybox = gl.getUniformLocation(skyboxProgram, "u_skybox");
+    skyboxProgram.width = gl.getUniformLocation(skyboxProgram, "width");
+    skyboxProgram.height = gl.getUniformLocation(skyboxProgram, "height");
+    skyboxProgram.lightPosition = gl.getUniformLocation(skyboxProgram, "lightPosition");
     if (skyboxProgram.a_position < 0 || !skyboxProgram.u_vpMatrix || !skyboxProgram.u_skybox) console.log("获取数据失败");
-
+    if (!skyboxProgram.width || !skyboxProgram.height || !skyboxProgram.lightPosition) console.log("获取bloom变量失败");
 }
 
 function loadSkyBox() {
@@ -107,6 +110,7 @@ function draw() {
     drawSkyBox();
     requestAnimationFrame(draw);
 }
+
 function drawSkyBox() {
     gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -123,11 +127,15 @@ function drawSkyBox() {
     setSkyVpMatrix();
     gl.useProgram(skyboxProgram);
     gl.uniform1i(skyboxProgram.u_skybox, 1);
+    gl.uniform2fv(skyboxProgram.lightPosition,new Float32Array([0.8,0.55]));
+    gl.uniform1f(skyboxProgram.width, window.innerWidth);
+    gl.uniform1f(skyboxProgram.height, window.innerHeight);
     gl.depthFunc(gl.LEQUAL);
-    gl.drawArrays(gl.TRIANGLES, 0, 1 * 6);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.useProgram(null);
-    gl.bindBuffer(gl.ARRAY_BUFFER,null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
+
 function setSkyVpMatrix() {
     var cameraMatrix = new Matrix4();
     cameraMatrix.lookAt(0, 0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
@@ -136,7 +144,7 @@ function setSkyVpMatrix() {
 
     var projectionMatrix = new Matrix4();
     var aspect = canvas.clientWidth / canvas.clientHeight;
-        projectionMatrix.setPerspective(50, aspect, 1, 2000);
+    projectionMatrix.setPerspective(50, aspect, 1, 2000);
 
     var vpMatrix = new Matrix4();
     vpMatrix.multiply(projectionMatrix).multiply(viewMatrix);
