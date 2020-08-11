@@ -1,23 +1,30 @@
 {
-    // 定义一些全局变量，
     var canvas, gl, frameProgram, drawProgram,skyboxProgram, fbo;
     var cube, plane, sphere,skyPositionBuffer, angle = 0.0;
     var OFFSCREEN_WIDTH = 4096, OFFSCREEN_HEIGHT = 4096;
     var angle_step = 30; //每秒旋转的增量
     var last = +new Date(); //保存上次调用animate()函数的方法
-    var lightColor = 1;//平行光颜色
+    var lightColor = 1;
 }
 {
     //矩阵
-    var mvpFrameForCube = new Matrix4();//帧缓冲区画方块
-    var mvpFrameForPlane = new Matrix4();//帧缓冲区画平面
-    var mvpFrameForSphere = new Matrix4();//帧缓冲区画球
-    var g_modelMatrix = new Matrix4();//没怎么使用模型矩阵，定义一个方便二次开发
+    var mvpFrameForCube = new Matrix4();
+    var mvpFrameForPlane = new Matrix4();
+    var mvpFrameForSphere = new Matrix4();
+    var g_modelMatrix = new Matrix4();
     var g_mvpMatrix = new Matrix4();
     //声明一个光源的变化矩阵
     var vpMatrixForFrame = new Matrix4();
     //为常规绘图准备视图投影矩阵
     var viewProjectMatrix = new Matrix4();
+    //skybox数据
+    var viewMatrix = new Matrix4();//视图矩阵
+    var projMatrix = new Matrix4();//投影矩阵
+    var vpMatrix = new Matrix4();//视图投影矩阵
+    var mvpMatrix = new Matrix4();//用于视角变换
+    var skyBloomMatrix = new Matrix4();
+    var currentAngle = [0.0, 0.0];
+    var lighrtPosition=new Vector3([2.0,2.0,2.0]);
 }
 {
     // 太阳高度数据
@@ -29,24 +36,24 @@
     var n = 1;//距离年初1月1日的天数 2020/7/28
     var myDate = new Date();//获取系统当前时间
     var shadowDate = myDate.Format("yyyy/MM/dd");
-    var shadowTime = 6;//滑块当前选择的时间
+    var shadowTime = 6;
 // shadowTime = parseInt(value.split("点")[0])+parseInt(value.split("点")[1].split("分")[0])/60;
     var realSunHour;//真太阳时
-    var lightDirection;//光线方向
+    var lightDirection;
 }
 
 function main() {
-    //初始化着色器程序，创建，连接编译
     initProgramAndShaders();
-    //从着色器中获取变量
     getVarFromShader();
-    //获取顶点数据
     initVerBuffers();
-    //加载天空盒子
+    gl.enable(gl.DEPTH_TEST);//开启深度测试
+    gl.depthFunc(gl.LEQUAL);//指定深度测试的方法，mdn depthFunc有所有的选择，这个是小于等于已有的值就覆盖，这是最常见的用法，还有等于的，大于的等等。
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    setOriginSkyBoxElement();
     loadSkyBox();
-    // 监听滑块事件
     listenSlider();
-    //创建帧缓冲区fbo
+    initEventHandlers(canvas);
     fbo = initFramebufferObject(gl);
     draw();
 }
@@ -69,7 +76,7 @@ function initProgramAndShaders() {
     }
 
     //初始化着色器
-    //读取script中的字符串
+    //读取script
     var vs = document.getElementById("vertexShader").innerHTML;
     var fs = document.getElementById("fragmentShader").innerHTML;
     var vsf = document.getElementById("frameVertexShader").innerHTML;
@@ -77,9 +84,9 @@ function initProgramAndShaders() {
     var fsForSkyBox = document.getElementById("fsForSkyBox").innerHTML;
     var vsForSkyBox = document.getElementById("vsForSkyBox").innerHTML;
     //创建着色器程序
-    drawProgram = createProgram(gl, vs, fs);//正常绘画着色器程序
-    frameProgram = createProgram(gl, vsf, fsf);//阴影着色器程序（帧绘制）
-    skyboxProgram = createProgram(gl, vsForSkyBox, fsForSkyBox);//天空盒着色器程序
+    drawProgram = createProgram(gl, vs, fs);
+    frameProgram = createProgram(gl, vsf, fsf);
+    skyboxProgram = createProgram(gl, vsForSkyBox, fsForSkyBox);
 }
 
 /**
@@ -104,15 +111,14 @@ function getVarFromShader() {
     drawProgram.u_AmbientLight = gl.getUniformLocation(drawProgram, "u_AmbientLight");
     if (drawProgram.a_Position < 0 || drawProgram.a_Normal < 0 || drawProgram.a_Color < 0) console.log("获取正常着色器顶点坐标失败");
     if (!drawProgram.u_MvpMatrix || !drawProgram.u_ModelMatrix || !drawProgram.u_NormalMatrix || !drawProgram.u_mvpMatrixFromLight || !drawProgram.u_Sampler || !drawProgram.u_LightColor || !drawProgram.u_LightDirection || !drawProgram.u_AmbientLight) console.log("获取正常着色器uniform数据失败");
-
     skyboxProgram.a_position = gl.getAttribLocation(skyboxProgram, "a_position");
-    skyboxProgram.u_vpMatrix = gl.getUniformLocation(skyboxProgram, "u_vpMatrix");
-    skyboxProgram.u_skybox = gl.getUniformLocation(skyboxProgram, "u_skybox");
-    if (skyboxProgram.a_position < 0 || !skyboxProgram.u_vpMatrix || !skyboxProgram.u_skybox) console.log("获取数据失败");
-    skyboxProgram.width = gl.getUniformLocation(skyboxProgram, "width");
-    skyboxProgram.height = gl.getUniformLocation(skyboxProgram, "height");
+    skyboxProgram.u_VpMatrix = gl.getUniformLocation(skyboxProgram, "u_VpMatrix");
+    skyboxProgram.u_SkyTexMap = gl.getUniformLocation(skyboxProgram, "u_SkyTexMap");
+    if (skyboxProgram.a_position < 0 || !skyboxProgram.u_VpMatrix || !skyboxProgram.u_SkyTexMap) console.log("获取数据失败");
+    skyboxProgram.skyBoxWidth = gl.getUniformLocation(skyboxProgram, "skyBoxWidth");
+    skyboxProgram.skyBoxHeight = gl.getUniformLocation(skyboxProgram, "skyBoxHeight");
     skyboxProgram.lightPosition = gl.getUniformLocation(skyboxProgram, "lightPosition");
-    if (!skyboxProgram.width || !skyboxProgram.height || !skyboxProgram.lightPosition) console.log("获取bloom变量失败");
+    if (!skyboxProgram.skyBoxWidth || !skyboxProgram.skyBoxHeight || !skyboxProgram.lightPosition) console.log("获取bloom变量失败");
 
 }
 
@@ -133,19 +139,19 @@ function initFramebufferObject(gl) {
     // 创建帧缓冲区对象 (FBO)
     framebuffer = gl.createFramebuffer();
     if (!framebuffer) {
-        console.log('创建帧缓冲区失败');
+        console.log('Failed to create frame buffer object');
         return error();
     }
 
     // 创建纹理对象并设置其尺寸和参数
     texture = gl.createTexture(); // 创建纹理对象
     if (!texture) {
-        console.log('创建纹理对象失败');
+        console.log('Failed to create texture object');
         return error();
     }
-    gl.bindTexture(gl.TEXTURE_2D, texture); // 绑定纹理对象
+    gl.bindTexture(gl.TEXTURE_2D, texture); // Bind the object to target
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    // 设置纹理参数格式
+    // 设置纹理参数
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -155,10 +161,10 @@ function initFramebufferObject(gl) {
     // 创建渲染缓冲区对象并设置其尺寸和参数
     depthBuffer = gl.createRenderbuffer(); //创建渲染缓冲区
     if (!depthBuffer) {
-        console.log('创建渲染缓冲区失败');
+        console.log('Failed to create renderbuffer object');
         return error();
     }
-    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer); // 绑定深度缓冲区
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer); // Bind the object to target
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
 
     // 将纹理和渲染缓冲区对象关联到帧缓冲区对象上
@@ -169,7 +175,7 @@ function initFramebufferObject(gl) {
     // 检查帧缓冲区是否被正确设置
     var e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     if (gl.FRAMEBUFFER_COMPLETE !== e) {
-        console.log('帧缓冲区设置失败: ' + e.toString());
+        console.log('Frame buffer object is incomplete: ' + e.toString());
         return error();
     }
 
@@ -186,7 +192,6 @@ function initFramebufferObject(gl) {
  */
 function initVerBuffers() {
     //设置顶点的坐标、颜色和法向量
-    initVertexBuffersForSkyBox(gl);
     cube = initVertexBuffersForCube(gl);
     plane = initVertexBuffersForPlane(gl);
     sphere = initVertexBuffersForSphere(gl);
@@ -196,25 +201,6 @@ function initVerBuffers() {
     }
 }
 
-/**
- * 将天空盒顶点数据载入缓冲区
- * 这里用的方法是只用绘制一个正方形，通过矩阵映射把二维扩展到三维，所以只需要四个点
- */
-function initVertexBuffersForSkyBox(gl) {
-    var vertices =new Float32Array(
-        [
-            -1, -1,
-            1, -1,
-            -1, 1,
-            -1, 1,
-            1, -1,
-            1, 1,
-        ]);
-    skyPositionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, skyPositionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-}
 /**
  * 将平面顶点数据载入缓冲区
  */
@@ -499,27 +485,27 @@ function loadSkyBox() {
     const faceInfos = [
         {
             target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-            url: '../libs/images/posx.jpg',
+            url: 'skybox/negx.jpg',
         },
         {
             target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
-            url: '../libs/images/negx.jpg',
+            url: 'skybox/posx.jpg',
         },
         {
             target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-            url: '../libs/images/posy.jpg',
+            url: 'skybox/posz.jpg',
         },
         {
             target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-            url: '../libs/images/negy.jpg',
+            url: 'skybox/negz.jpg',
         },
         {
             target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
-            url: '../libs/images/posz.jpg',
+            url: 'skybox/posy.jpg',
         },
         {
             target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
-            url: '../libs/images/negz.jpg',
+            url: 'skybox/negy.jpg',
         },
     ];
 
@@ -529,8 +515,8 @@ function loadSkyBox() {
         const level = 0;
         const internalFormat = gl.RGBA;
         const format = gl.RGBA;
-        const width = 2048;
-        const height = 2048;
+        const width = 512;
+        const height = 512;
         const type = gl.UNSIGNED_BYTE;
         //设置每个面使其可以渲染
         gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
@@ -549,6 +535,21 @@ function loadSkyBox() {
     gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 }
+function setOriginSkyBoxElement() {
+    gl.useProgram(skyboxProgram);
+    viewMatrix.lookAt(0, 1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    projMatrix.setPerspective(30, canvas.width / canvas.height, 0.1, 1000);
+    vpMatrix.multiply(projMatrix).multiply(viewMatrix);
+    gl.uniformMatrix4fv(skyboxProgram.u_VpMatrix, false, vpMatrix.elements);
+
+    gl.uniform3fv(skyboxProgram.lightPosition,lighrtPosition.elements);
+    gl.uniform1f(skyboxProgram.skyBoxWidth, window.innerWidth);
+    gl.uniform1f(skyboxProgram.skyBoxHeight, window.innerHeight);
+    // gl.uniform1f(skyboxProgram.skyBoxLength, window.innerHeight);
+
+    gl.useProgram(null);
+}
+
 /**
  * 获取光线地址
  */
@@ -590,7 +591,12 @@ function initAttributeVariable(gl, a_attribute, buffer) {
     gl.vertexAttribPointer(a_attribute, buffer.num, buffer.type, false, 0, 0);
     gl.enableVertexAttribArray(a_attribute);
 }
-
+/**
+ * 主要绘制函数
+ * 首先绘制天空盒，避免遮挡其他的物体
+ * 然后绘制阴影贴图
+ * 最后绘制所有的物体
+ * */
 function draw() {
     drawSkyBox();
     angle = animate(angle);
@@ -598,7 +604,6 @@ function draw() {
     setLightElements();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);//绑定缓冲区对象
     gl.viewport(0.0, 0.0, OFFSCREEN_WIDTH, OFFSCREEN_HEIGHT);
-    gl.clearColor(0, 0, 0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     //开启深度缓冲区
     gl.enable(gl.DEPTH_TEST);
@@ -641,56 +646,74 @@ function draw() {
     requestAnimationFrame(draw);
 
 }
+/**
+ * 绘制天空盒
+ * */
 function drawSkyBox() {
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    gl.enable(gl.DEPTH_TEST);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.enableVertexAttribArray(skyboxProgram.a_position);
-    gl.bindBuffer(gl.ARRAY_BUFFER, skyPositionBuffer);
-    var size = 2;
-    var type = gl.FLOAT;
-    var normalize = false;
-    var stride = 0;
-    var offset = 0;
-    gl.vertexAttribPointer(skyboxProgram.a_position, size, type, normalize, stride, offset);
-    setSkyVpMatrix();
     gl.useProgram(skyboxProgram);
-    gl.uniform1i(skyboxProgram.u_skybox, 1);
-    let lightPosition = getLight();
-    let positionX = lightPosition.elements[0];
-    let positionY = lightPosition.elements[1];
-    let positionZ = lightPosition.elements[2];
-    if(positionX ==0&&positionY==0){
-        positionX=-10;
-        positionY=-10;
-        positionZ=-10;
-    }
-    // console.log("positionX is :"+positionX+"positionY is :"+positionY);
-    gl.uniform2fv(skyboxProgram.lightPosition,new Float32Array([positionX,positionY]));
-    gl.uniform1f(skyboxProgram.width, window.innerWidth);
-    gl.uniform1f(skyboxProgram.height, window.innerHeight);
-    gl.depthFunc(gl.LEQUAL);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.useProgram(null);
+    mvpMatrix.set(vpMatrix);
+    mvpMatrix.rotate(currentAngle[0], 1.0, 0.0, 0.0);
+    mvpMatrix.rotate(currentAngle[1], 0.0, 1.0, 0.0);
+    gl.uniformMatrix4fv(skyboxProgram.u_VpMatrix, false, mvpMatrix.elements);
+    // console.log(lighrtPosition);
+    gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+
+    var lightDirection = getLight();
+    skyBloomMatrix.set(new Matrix4());
+    skyBloomMatrix.rotate(currentAngle[0], 1.0, 0.0, 0.0);
+    skyBloomMatrix.rotate(currentAngle[1], 0.0, 1.0, 0.0);
+    lightDirection=skyBloomMatrix.multiplyVector3(lightDirection);
+    gl.uniform3fv(skyboxProgram.lightPosition,lightDirection.elements);
+
+    gl.useProgram(skyboxProgram);
+    var skybox = initVertexBuffersForskybox(gl);
+    initAttributeVariable(gl, skyboxProgram.a_Position, skybox.vertexBuffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);
+    gl.uniform1i(skyboxProgram.u_SkyTexMap, 1);
+    // gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+    gl.drawElements(gl.TRIANGLES, skybox.numIndices, gl.UNSIGNED_BYTE, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
-function setSkyVpMatrix() {
-    var cameraMatrix = new Matrix4();
-    cameraMatrix.lookAt(0, 0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    var viewMatrix = new Matrix4();
-    viewMatrix.setInverseOf(cameraMatrix);
+function initVertexBuffersForskybox(gl) {
 
-    var projectionMatrix = new Matrix4();
-    var aspect = canvas.clientWidth / canvas.clientHeight;
-    projectionMatrix.setPerspective(50, aspect, 1, 2000);
+    var vertices = new Float32Array([   // 单色立方体的顶点位置数据
+        1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0,    // v0-v1-v2-v3 front
+        1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0,    // v0-v3-v4-v5 right
+        1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0,    // v0-v5-v6-v1 up
+        -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0,    // v1-v6-v7-v2 left
+        -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,    // v7-v4-v3-v2 down
+        1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0     // v4-v7-v6-v5 back
 
-    var vpMatrix = new Matrix4();
-    vpMatrix.multiply(projectionMatrix).multiply(viewMatrix);
-    vpMatrix.setInverseOf(vpMatrix);
-    gl.useProgram(skyboxProgram);
-    gl.uniformMatrix4fv(skyboxProgram.u_vpMatrix, false, vpMatrix.elements);
+
+    ]);
+    var indices = new Uint8Array([        // 索引值
+        0, 1, 2, 0, 2, 3,    // front
+        4, 5, 6, 4, 6, 7,    // right
+        8, 9, 10, 8, 10, 11,    // up
+        12, 13, 14, 12, 14, 15,    // left
+        16, 17, 18, 16, 18, 19,    // down
+        20, 21, 22, 20, 22, 23     // back
+    ]);
+
+    var obj = {}; //使用对象返回多个缓冲区对象
+
+    //将顶点信息写入缓冲区对象
+    obj.vertexBuffer = initArrayBufferForLaterUse(gl, vertices, 3, gl.FLOAT);
+    obj.indexBuffer = initElementArrayBufferForLaterUse(gl, indices, gl.UNSIGNED_BYTE);
+    if (!obj.vertexBuffer || !obj.indexBuffer) {
+        return null;
+    }
+
+    obj.numIndices = indices.length;
+
+    //取消绑定焦点的数据
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+    return obj;
 }
+
 function animate(angle) {
     var now = +new Date();
     var elapsed = now - last;
@@ -709,7 +732,7 @@ function setLightElements() {
     var light_x = lightDirection.elements[0] * r;
     var light_y = lightDirection.elements[1] * r;
     var light_z = lightDirection.elements[2] * r;
-     // console.log("lightX: " + light_x + "lightY: " + light_y + "lightZ: " + light_z);
+    // console.log("lightX: " + light_x + "lightY: " + light_y + "lightZ: " + light_z);
     //声明一个光源的变化矩阵
     // vpMatrixForFrame.setOrtho(-20000, 20000, -20000, 20000, 0, 50000);
     vpMatrixForFrame.setOrtho(-30, 30, -30, 30, 1, 40);
@@ -728,7 +751,9 @@ function setLightElements() {
 
 function drawShadowInFrame(program, obj, x, y, z, angle) {
     var roateMitrix = new Matrix4();
-    roateMitrix.rotate(angle, 0.0, 1.0, 0.0);
+    // roateMitrix.rotate(angle, 0.0, 1.0, 0.0);
+    roateMitrix.setRotate(currentAngle[0],1.0,0.0,0.0);
+    roateMitrix.setRotate(currentAngle[1],0.0,1.0,0.0);
     var modelMatrix = new Matrix4();
     modelMatrix.translate(x, y, z);
     initAttributeVariable(gl, program.a_Position, obj.vertexBuffer);
@@ -741,7 +766,9 @@ function drawShadowInFrame(program, obj, x, y, z, angle) {
 
 function setMatrixAndDrawInDraw(program, obj, x, y, z, angle) {
     var roateMitrix = new Matrix4();
-    roateMitrix.rotate(angle, 0.0, 1.0, 0.0);
+    // roateMitrix.rotate(angle, 0.0, 1.0, 0.0);
+    roateMitrix.setRotate(currentAngle[0],1.0,0.0,0.0);
+    roateMitrix.setRotate(currentAngle[1],0.0,1.0,0.0);
     var modelMatrix = new Matrix4();
     modelMatrix.translate(x, y, z);
     initAttributeVariable(gl, program.a_Position, obj.vertexBuffer);
@@ -791,4 +818,47 @@ const listenSlider = () => {
         });
         sliderControl.setValue(720);
     });
+}
+function initEventHandlers(canvas) {
+    var dragging = false; // Dragging or not
+    var lastX = -1,
+        lastY = -1; // Last position of the mouse
+
+    //鼠标按下
+    canvas.onmousedown = function (ev) {
+        var x = ev.clientX;
+        var y = ev.clientY;
+        // Start dragging if a moue is in <canvas>
+        var rect = ev.target.getBoundingClientRect();
+        if (rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom) {
+            lastX = x;
+            lastY = y;
+            dragging = true;
+        }
+    };
+
+    //鼠标离开时
+    canvas.onmouseleave = function (ev) {
+        dragging = false;
+    };
+
+    //鼠标释放
+    canvas.onmouseup = function (ev) {
+        dragging = false;
+    };
+
+    //鼠标移动
+    canvas.onmousemove = function (ev) {
+        var x = ev.clientX;
+        var y = ev.clientY;
+        if (dragging) {
+            var factor = 100 / canvas.height; // The rotation ratio
+            var dx = factor * (x - lastX);
+            var dy = factor * (y - lastY);
+            currentAngle[0] = currentAngle[0] + dy;
+            currentAngle[1] = currentAngle[1] + dx;
+        }
+        lastX = x, lastY = y;
+    };
+
 }

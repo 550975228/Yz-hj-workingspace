@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>太阳光影变化</title>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Arial;
+            padding: 10px;
+            background: #f1f1f1;
+        }
+
+        .leftcolumn {
+            float: left;
+            width: 75%;
+        }
+
+        .rightcolum {
+            float: left;
+            width: 25%;
+            background-color: #f1f1f1;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .card {
+            background-color: gainsboro;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" href="/libs/layui/css/layui.css" media="all">
+    <script id="vsForSkyBox" type="x-shader/x-vertex">
+        attribute vec4 a_position;
+        uniform mat4 u_VpMatrix;
+        varying vec3 v_SkyCoord;
+        void main(){
+            gl_Position = u_VpMatrix * a_position;
+            v_SkyCoord = normalize(a_position.xyz);
+
+        }
+
+    </script>
+
+    <script id="fsForSkyBox" type="x-shader/x-vertex">
+        precision highp float;
+        uniform samplerCube u_SkyTexMap;
+        uniform float skyBoxWidth;
+        uniform float skyBoxHeight;
+        uniform vec3 lightPosition;
+        varying vec3 v_SkyCoord;
+        void main(){
+            //skybox
+            vec4 skyboxColor = textureCube(u_SkyTexMap, normalize(v_SkyCoord));
+
+            //bloom
+            vec2 resolution = vec2(skyBoxWidth, skyBoxHeight);
+            vec2 uv = gl_FragCoord.xy/resolution.xy;
+            uv.x = 2.0*uv.x -1.0;
+            uv.y = 2.0 * uv.y-0.2;
+            //            uv.x *=resolution.x/resolution.y;
+            uv.y *=resolution.y/resolution.x;
+            float ratio = resolution.x/resolution.y;
+
+            //            vec2 lightPosition = vec2(0.2, 0.5);
+            vec2 pos = lightPosition.xy - uv;
+
+            float dist = 1.0/length(pos);
+            dist *= 0.1;
+            dist = pow(dist, 0.9);
+            float lareFrameColor = 0.2;
+            vec3 col = dist * vec3(lareFrameColor, lareFrameColor, lareFrameColor);
+            col = 1.0 - exp(-col);
+            vec4 lareFlame = vec4(col, 1.0);
+            gl_FragColor = skyboxColor+lareFlame;
+        }
+
+    </script>
+    <script id="frameVertexShader" type="x-shader/x-vertex">
+        //设置阴影顶点着色器
+        attribute vec4 a_Position;
+        attribute vec4 a_Color;
+        uniform mat4 u_MvpMatrix;
+        varying vec4 v_Color;
+        void main() {
+            gl_Position = u_MvpMatrix * a_Position;
+            v_Color = a_Color;
+
+        }
+    </script>
+    <script id="frameFragmentShader" type="x-shader/x-vertex">
+        //设置阴影片元着色器
+        precision highp float;
+        varying vec4 v_Color;
+        const vec4 bitShift = vec4(1.0, 256.0, 256.0 * 256.0, 256.0 * 256.0 * 256.0);
+        const vec4 bitMask = vec4(1.0/256.0, 1.0/256.0, 1.0/256.0, 0.0);
+        vec4 packDepth (float depth) {
+            vec4 rgbaDepth = fract(depth * bitShift);
+            rgbaDepth -= rgbaDepth.gbaa * bitMask;
+            return rgbaDepth;
+        }
+
+        void main() {
+            gl_FragColor = packDepth(gl_FragCoord.z);
+        }
+    </script>
+    <script id="vertexShader" type="x-shader/x-vertex">
+        attribute vec4 a_Position;//顶点数据
+        attribute vec4 a_Normal;//法线数据
+        attribute vec4 a_Color;
+        uniform mat4 u_MvpMatrix;//模型视图投影矩阵
+        uniform mat4 u_ModelMatrix;// 模型矩阵
+        uniform mat4 u_NormalMatrix;// 模型的逆转置矩阵，用于计算变化后的法线。
+        uniform mat4 u_mvpMatrixFromLight;//接收点到光源的距离的矩阵，写阴影贴图用
+        varying vec4 v_PositionFromLight;//点到光源位置数组，写阴影贴图用
+        varying vec4 v_Color;//顶点颜色
+        varying vec3 v_Normal;//变化之后的顶点的法线
+        varying vec3 v_Position;//世界坐标系中的顶点位置
+        void main() {
+            v_PositionFromLight = u_mvpMatrixFromLight * a_Position;
+            gl_Position = u_MvpMatrix * a_Position;//球的位置
+            v_Position = vec3(u_ModelMatrix * a_Position);//计算顶点在世界坐标系中的位置。
+            v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));//计算变化之后的顶点法线
+            v_Color = a_Color;//顶点颜色
+        }
+
+
+    </script>
+    <script id="fragmentShader" type="x-shader/x-vertex">
+        #ifdef GL_ES
+        precision highp float;
+        #endif
+        uniform sampler2D u_Sampler;//阴影贴图
+        uniform vec3 u_LightColor;// 灯光颜色
+        uniform vec3 u_LightDirection;// 光方向
+        uniform vec3 u_AmbientLight;// 环境光颜色
+        varying vec3 v_Normal;//顶点法线
+        varying vec3 v_Position;//顶点位置
+        varying vec4 v_Color;//顶点颜色
+        varying vec4 v_PositionFromLight;
+        float unpackDepth(const in vec4 rgbaDepth) {
+            const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
+            float depth = dot(rgbaDepth, bitShift);
+            return depth;
+        }
+        float pcf(float cosTheta, vec4 position) {
+            float shadows = 0.0;
+            float opacity = 0.4;
+            float texelSize = 1.0/4096.0;
+            vec4 rgbaDepth;
+            vec3 shadowCoord = (position.xyz/position.w)/2.0 + 0.5;
+            float bias = 0.005 * tan(acos(cosTheta));
+            bias = clamp(bias, 0.0015, 0.01);
+            for (float y=-1.5; y <= 1.5; y += 1.0){
+                for (float x=-1.5; x <=1.5; x += 1.0){
+                    rgbaDepth = texture2D(u_Sampler, shadowCoord.xy + vec2(x, y) * texelSize);
+                    shadows += step(shadowCoord.z - bias, unpackDepth(rgbaDepth));
+                }
+            }
+            shadows /= 16.0;
+            return min(opacity + shadows, 1.0);
+        }
+        void main() {
+            //再次对法线归一化，因为被插值了。
+            vec3 normal = normalize(v_Normal);
+            //计算环境光
+            vec3 ambient = u_AmbientLight * v_Color.rgb;
+            //用点积计算光与法线夹角的cos值。
+            float nDotL = max(dot(normalize(u_LightDirection), normal), 0.0);
+            //计算漫反射光
+            vec3 diffuse = u_LightColor * v_Color.rgb * nDotL;
+            //阴影贴图
+            //            vec3 shadowCoord = (v_PositionFromLight.xyz/v_PositionFromLight.w)/2.0 + 0.5;
+            //            vec4 rgbaDepth = texture2D(u_Sampler, shadowCoord.xy);
+            //            float depth = unpackDepth(rgbaDepth);
+            float visibility = pcf(nDotL, v_PositionFromLight);
+            //最终的颜色
+            gl_FragColor = vec4(ambient + diffuse * visibility, v_Color.a);
+        }
+
+
+    </script>
+</head>
+<body onload="main()">
+
+<div class="leftcolumn">
+    <div class="card">
+        <h2 style="text-align: center">太阳光影变化(天空盒加载六面)</h2>
+        <canvas id="canvas"></canvas>
+    </div>
+</div>
+<div class="rightcolum">
+    <div class="card">
+        <h2>这里放控制栏</h2>
+        <div>
+
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+                <legend>时间选择：</legend>
+            </fieldset>
+            <div id="timeSlider" class="daytime-slider"></div>
+        </div>
+    </div>
+</div>
+<script src="../libs/layui/layui.all.js" charset="UTF-8"></script>
+<script src="../libs/sunRealHour.js"></script>
+<script src="../libs/sunCaculateFunction.js"></script>
+<script src="../libs/webgl_utils"></script>
+<script src="../libs/webgl_debug.js"></script>
+<script src="../libs/cuon_matrix.js"></script>
+<script src="../libs/cuon_utils.js"></script>
+<script src="anotherSkyBoxSunshine.js"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
